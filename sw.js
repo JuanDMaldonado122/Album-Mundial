@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mundial-26-cache-v6';
+const CACHE_NAME = 'mundial-26-cache-v7';
 const urlsToCache = [
   './',
   './index.html',
@@ -9,6 +9,8 @@ const urlsToCache = [
   './js/register.js',
   './js/config/firebaseConfig.js',
   './js/data/albumData.js',
+  './js/features/pdfExport.js',
+  './js/services/albumService.js',
   './manifest.json',
   './assets/images/logo26.png',
   './assets/images/icon.png'

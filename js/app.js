@@ -3,6 +3,8 @@ import { getDatabase, ref, onValue, update, get, set } from "https://www.gstatic
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { firebaseConfig } from "./config/firebaseConfig.js";
 import { albumDatabase } from "./data/albumData.js";
+import { generateStickerPdf } from "./features/pdfExport.js";
+import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists, getTeamStickers } from "./services/albumService.js";
 
     // 2. Initialize Firebase
     const app = initializeApp(firebaseConfig);
@@ -137,18 +139,12 @@ import { albumDatabase } from "./data/albumData.js";
     };
 
     window.updateStats = function() {
-        let unq = 0; let dup = 0;
-        for(let k in window.state) {
-            if (window.state[k] > 0) unq++;
-            if (window.state[k] > 1) dup += (window.state[k] - 1);
-        }
-        const MAX_TOTAL = 980;
-        const pct = ((unq / MAX_TOTAL) * 100).toFixed(1);
+        const stats = getAlbumStats(window.state);
         
-        document.getElementById('stat-unq').innerHTML = `${unq} <span class="total">/ ${MAX_TOTAL}</span>`;
-        document.getElementById('stat-dup').innerText = `${dup}`;
-        document.getElementById('stat-pct').innerText = `${pct}% Listo`;
-        document.getElementById('progress-bar').style.width = `${pct}%`;
+        document.getElementById('stat-unq').innerHTML = `${stats.unique} <span class="total">/ ${stats.total}</span>`;
+        document.getElementById('stat-dup').innerText = `${stats.duplicates}`;
+        document.getElementById('stat-pct').innerText = `${stats.percentage}% Listo`;
+        document.getElementById('progress-bar').style.width = `${stats.percentage}%`;
     };
 
     window.shareWsp = function() {
@@ -161,15 +157,13 @@ import { albumDatabase } from "./data/albumData.js";
     };
 
     window.getAllStickers = function() {
-        let all = [...window.DB.especial];
-        window.DB.groups.forEach(g => g.teams.forEach(t => { for(let i=1;i<=20;i++) all.push(`${t.code} ${i}`); }));
-        return all;
+        return getAllStickers(window.DB);
     };
 
     window.openTrade = function() {
         document.getElementById('trade-receive').value = '';
         let all = window.getAllStickers();
-        let repetidas = all.filter(id => (window.state[id] || 0) > 1);
+        let repetidas = getDuplicateStickerIds(all, window.state);
         
         const selGive = document.getElementById('trade-give');
         const btnExe = document.getElementById('btn-execute-trade');
@@ -278,7 +272,7 @@ import { albumDatabase } from "./data/albumData.js";
         window.currentTeamContext = {code: teamCode, name: teamName, isSpecial};
         
         document.getElementById('team-title').innerText = teamName;
-        let stickers = isSpecial ? window.DB.especial : Array.from({length: 20}, (_, i) => `${teamCode} ${i+1}`);
+        let stickers = getTeamStickers(window.DB, teamCode, isSpecial);
         const grid = document.getElementById('sticker-grid');
         grid.innerHTML = '';
         stickers.forEach(id => grid.appendChild(window.createStickerEl(id)));
@@ -286,13 +280,7 @@ import { albumDatabase } from "./data/albumData.js";
     };
 
     window.openSummary = function() {
-        let m = [], g = [], d = [];
-        window.getAllStickers().forEach(id => {
-            let count = window.state[id] || 0;
-            if(count === 0) m.push(id);
-            else if(count === 1) g.push(id);
-            else d.push(`${id} (+${count-1})`);
-        });
+        const { missing: m, got: g, duplicates: d } = getSummaryLists(window.getAllStickers(), window.state);
 
         document.getElementById('count-missing').innerText = m.length;
         document.getElementById('count-got').innerText = g.length;
@@ -623,7 +611,7 @@ import { albumDatabase } from "./data/albumData.js";
     /* === EXPORT LOGIC === */
     window.shareRepeated = function() {
         const allStickers = window.getAllStickers();
-        const dups = allStickers.filter(id => (window.state[id] || 0) > 1);
+        const dups = getDuplicateStickerIds(allStickers, window.state);
         
         if (dups.length === 0) {
             alert("Aun no tienes laminas repetidas para compartir.");
@@ -636,56 +624,8 @@ import { albumDatabase } from "./data/albumData.js";
 
     window.generatePDF = function(type) {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
         const allStickers = window.getAllStickers();
-        
-        let list = [];
-        let titleText = "";
-        
-        if (type === 'missing') {
-            list = allStickers.filter(id => (window.state[id] || 0) === 0);
-            titleText = "LÁMINAS FALTANTES - MUNDIAL 2026";
-        } else {
-            list = allStickers.filter(id => (window.state[id] || 0) > 1);
-            titleText = "LÁMINAS REPETIDAS - MUNDIAL 2026";
-        }
+        const result = generateStickerPdf({ type, allStickers, state: window.state, jsPDF });
 
-        if (list.length === 0) {
-            alert(type === 'missing' ? "¡Felicidades! Ya no te faltan laminas." : "Aun no tienes laminas repetidas.");
-            return;
-        }
-
-        // Title
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(18);
-        doc.setTextColor(204, 0, 0); // FIFA RED
-        doc.text(titleText, 20, 20);
-        
-        doc.setFontSize(10);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`Generado el: ${new Date().toLocaleDateString()}`, 20, 28);
-        doc.text(`Total laminas: ${list.length}`, 20, 33);
-
-        // Content
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(0, 0, 0);
-        
-        let y = 45;
-        let x = 20;
-        const colWidth = 35;
-
-        list.forEach((code) => {
-            doc.text(code, x, y);
-            x += colWidth;
-            if (x > 180) {
-                x = 20;
-                y += 8;
-            }
-            if (y > 280) {
-                doc.addPage();
-                y = 20;
-            }
-        });
-
-        doc.save(`${type === 'missing' ? 'Faltantes' : 'Repetidas'}_Mundial2026.pdf`);
+        if (!result.ok) alert(result.message);
     };
