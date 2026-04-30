@@ -1,5 +1,6 @@
 import { albumDatabase } from "./data/albumData.js";
 import { generateStickerPdf } from "./features/pdfExport.js";
+import { captureAndScan, closeScanner, openScanner } from "./features/scanner.js";
 import { loginUser, logoutUser, persistAuthSession, registerUser, watchAuthState } from "./services/authService.js";
 import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists, getTeamStickers } from "./services/albumService.js";
 import { auth, db } from "./services/firebaseService.js";
@@ -492,94 +493,29 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     };
 
     /* === SCANNER LOGIC === */
-    let scannerStream = null;
-
     window.openScanner = async function() {
-        const video = document.getElementById('scanner-video');
-        const fab = document.getElementById('fab-scan');
-        
-        try {
-            scannerStream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'environment', focusMode: 'continuous' } 
-            });
-            video.srcObject = scannerStream;
-            window.switchView('view-scanner', true);
-            fab.style.display = 'none';
-        } catch (err) {
-            console.error("Camera Error:", err);
-            alert("⚠️ No se pudo acceder a la camara. Asegurate de dar permisos en tu iPhone.");
-        }
+        await openScanner({
+            video: document.getElementById('scanner-video'),
+            fab: document.getElementById('fab-scan'),
+            switchView: window.switchView
+        });
     };
 
     window.closeScanner = function() {
-        if (scannerStream) {
-            scannerStream.getTracks().forEach(track => track.stop());
-            scannerStream = null;
-        }
-        document.getElementById('fab-scan').style.display = 'flex';
-        window.goHome();
+        closeScanner({
+            fab: document.getElementById('fab-scan'),
+            goHome: window.goHome
+        });
     };
 
     window.captureAndScan = async function() {
-        const video = document.getElementById('scanner-video');
-        const loader = document.getElementById('scanner-loader');
-        const canvas = document.createElement('canvas');
-        
-        // Setup canvas to capture center area (guide)
-        canvas.width = 640;
-        canvas.height = 480;
-        const ctx = canvas.getContext('2d');
-        
-        // Draw video frame to canvas
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        loader.classList.add('active');
-        
-        try {
-            // Process with Tesseract
-            const { data: { text } } = await Tesseract.recognize(canvas, 'eng');
-            console.log("OCR Result:", text);
-            
-            // Search for sticker patterns (e.g., BRA 1, MEX 10, FWC 1)
-            // Regex to find: 3 uppercase letters + space + number
-            const match = text.match(/([A-Z]{3}|FWC)\s?(\d{1,2})/i);
-            
-            if (match) {
-                const code = match[1].toUpperCase().trim();
-                const num = match[2].trim();
-                const fullCode = (code === 'FWC' && num === '00') ? '00' : `${code} ${num}`;
-                
-                // Validate if it exists in our DB
-                const all = window.getAllStickers();
-                if (all.includes(fullCode)) {
-                    loader.classList.remove('active');
-                    // Add directly or ask simply
-                    window.updateSticker(fullCode, 1);
-                    
-                    // Visual feedback instead of blocking alert
-                    const guide = document.querySelector('.scanner-guide');
-                    guide.style.borderColor = '#C8D400';
-                    setTimeout(() => { guide.style.borderColor = ''; }, 1000);
-                    
-                    console.log(`Lámina ${fullCode} agregada.`);
-                } else {
-                    throw new Error("Código no reconocido.");
-                }
-            } else {
-                throw new Error("No detectado.");
-            }
-        } catch (e) {
-            console.warn("Scan failed:", e.message);
-            // Show brief error in guide
-            const guide = document.querySelector('.scanner-guide');
-            guide.style.borderColor = '#CC0000';
-            setTimeout(() => { guide.style.borderColor = ''; }, 800);
-        } finally {
-            loader.classList.remove('active');
-            // Video keeps playing, user can tap again immediately
-        }
+        await captureAndScan({
+            video: document.getElementById('scanner-video'),
+            loader: document.getElementById('scanner-loader'),
+            getAllStickers: window.getAllStickers,
+            updateSticker: window.updateSticker
+        });
     };
-
     /* === EXPORT LOGIC === */
     window.shareRepeated = function() {
         const allStickers = window.getAllStickers();
