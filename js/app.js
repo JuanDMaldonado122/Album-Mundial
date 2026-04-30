@@ -1,6 +1,7 @@
 import { albumDatabase } from "./data/albumData.js";
 import { generateStickerPdf } from "./features/pdfExport.js";
 import { captureAndScan, closeScanner, openScanner } from "./features/scanner.js";
+import { executeManualTrade, openTradeView } from "./features/trade.js";
 import { loginUser, logoutUser, persistAuthSession, registerUser, watchAuthState } from "./services/authService.js";
 import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists, getTeamStickers } from "./services/albumService.js";
 import { auth, db } from "./services/firebaseService.js";
@@ -155,49 +156,24 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     };
 
     window.openTrade = function() {
-        document.getElementById('trade-receive').value = '';
-        let all = window.getAllStickers();
-        let repetidas = getDuplicateStickerIds(all, window.state);
-        
-        const selGive = document.getElementById('trade-give');
-        const btnExe = document.getElementById('btn-execute-trade');
-        
-        if (repetidas.length === 0) {
-            selGive.innerHTML = '<option value="">No tienes láminas repetidas aún</option>';
-            selGive.disabled = true; btnExe.disabled = true;
-        } else {
-            selGive.disabled = false; btnExe.disabled = false;
-            selGive.innerHTML = '<option value="" disabled selected>Elige cuál lámina entregas...</option>' + 
-                repetidas.map(id => `<option value="${id}">${id} (Tienes ${window.state[id] - 1} extras)</option>`).join('');
-        }
+        const allStickers = window.getAllStickers();
 
-        const datalist = document.getElementById('dl-all');
-        if(datalist.options.length === 0) {
-            datalist.innerHTML = all.map(id => `<option value="${id}">`).join('');
-        }
-        window.switchView('view-trade');
+        openTradeView({
+            state: window.state,
+            allStickers,
+            duplicateStickerIds: getDuplicateStickerIds(allStickers, window.state),
+            switchView: window.switchView
+        });
     };
 
     window.executeTrade = function() {
-        const give = document.getElementById('trade-give').value;
-        const recRaw = document.getElementById('trade-receive').value;
-        const rec = recRaw ? recRaw.trim().toUpperCase() : '';
-
-        if (!give) { alert("Selecciona qué lámina entregas."); return; }
-        if (!rec) { alert("Escribe qué lámina recibes."); return; }
-        if (!window.getAllStickers().includes(rec)) {
-            alert("El código que recibes no es válido. Ejemplos válidos: FWC 1, MEX 10, ARG 5"); return;
-        }
-        if (window.state[give] < 2) { alert("Ya no tienes la lámina que entregas repetida."); window.openTrade(); return; }
-
-        if (confirm(`¿Confirmas que entregas ${give} a cambio de recibir ${rec}?`)) {
-            window.updateSticker(give, -1);
-            window.updateSticker(rec, 1);
-            alert(`✅ ¡Cambio registrado y SINCRONIZADO!\n\nMenos: 1 de ${give}\nMás: 1 de ${rec}`);
-            window.openTrade(); 
-        }
+        executeManualTrade({
+            state: window.state,
+            allStickers: window.getAllStickers(),
+            updateSticker: window.updateSticker,
+            reopenTrade: window.openTrade
+        });
     };
-
     window.switchView = function(viewId, pushState = true) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.getElementById(viewId).classList.add('active');
