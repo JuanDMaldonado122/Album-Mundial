@@ -28,12 +28,12 @@ export function renderHomeDashboard({ container, albumDatabase, state, activity 
         <div class="insight-card">
             <div class="insight-kicker">Panel vivo</div>
             <div class="insight-title">${stats.percentage}% completado</div>
-            <div class="insight-copy">${topTeam ? `${topTeam.name} es tu seleccion mas avanzada con ${topTeam.owned}/${topTeam.total}.` : 'Empieza marcando tus primeras laminas.'}</div>
+            <div class="insight-copy">${topTeam ? `${topTeam.name} es tu selección más avanzada con ${topTeam.owned}/${topTeam.total}.` : 'Empieza marcando tus primeras láminas.'}</div>
         </div>
         <div class="insight-card">
             <div class="insight-kicker">Ultimo movimiento</div>
-            <div class="insight-title">${recent ? recent.message : 'Sin actividad todavia'}</div>
-            <div class="insight-copy">${recent ? formatActivityTime(recent.at) : 'Agrega laminas o paquetes para llenar este historial.'}</div>
+            <div class="insight-title">${recent ? recent.message : 'Sin actividad todavía'}</div>
+            <div class="insight-copy">${recent ? formatActivityTime(recent.at) : 'Agrega láminas o paquetes para llenar este historial.'}</div>
         </div>
     `;
 }
@@ -42,14 +42,14 @@ export function renderPowerDashboard({ container, albumDatabase, state, activity
     const stats = getAlbumStats(state);
     const teamProgress = getTeamProgress(albumDatabase, state).slice(0, 5);
     const ranking = [
-        { email: 'Tu album', totalOwned: stats.unique, self: true },
+        { email: 'Tu álbum', totalOwned: stats.unique, self: true },
         ...friendSummaries
     ].sort((a, b) => b.totalOwned - a.totalOwned);
 
     container.innerHTML = `
         <div class="insight-card">
             <div class="insight-kicker">Dashboard</div>
-            <div class="insight-title">${stats.unique}/${stats.total} laminas unicas</div>
+            <div class="insight-title">${stats.unique}/${stats.total} láminas Únicas</div>
             <div class="insight-copy">${stats.duplicates} repetidas disponibles para mover canjes.</div>
         </div>
         <div class="insight-card">
@@ -67,7 +67,7 @@ export function renderPowerDashboard({ container, albumDatabase, state, activity
         <div class="insight-card">
             <div class="insight-kicker">Actividad reciente</div>
             <div class="activity-list">
-                ${(activity.length ? activity.slice(0, 8) : [{ message: 'Sin actividad todavia', at: new Date().toISOString() }]).map(item => `<div class="activity-row"><span class="activity-main">${item.message}</span><span class="activity-time">${formatActivityTime(item.at)}</span></div>`).join('')}
+                ${(activity.length ? activity.slice(0, 8) : [{ message: 'Sin actividad todavía', at: new Date().toISOString() }]).map(item => `<div class="activity-row"><span class="activity-main">${item.message}</span><span class="activity-time">${formatActivityTime(item.at)}</span></div>`).join('')}
             </div>
         </div>
     `;

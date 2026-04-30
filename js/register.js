@@ -43,7 +43,7 @@ import { persistAuthSession, registerUser } from "./services/authService.js";
             if (err.code === 'auth/email-already-in-use') {
                 msg.textContent = 'Este correo ya tiene cuenta. Entra desde la pantalla principal.';
             } else if (err.code === 'auth/admin-restricted-operation') {
-                msg.textContent = 'Activa Email/Contrasena en Firebase Authentication.';
+                msg.textContent = 'Activa Email/Contraseña en Firebase Authentication.';
             } else {
                 msg.textContent = 'Error: ' + err.message;
             }

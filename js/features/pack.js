@@ -24,6 +24,6 @@ export function addPackFromText({ text, allStickers, updateSticker }) {
     return {
         accepted,
         rejected,
-        message: `${accepted.length} laminas agregadas${rejected.length ? `. No reconocidas: ${rejected.join(', ')}` : '.'}`
+        message: `${accepted.length} láminas agregadas${rejected.length ? `. No reconocidas: ${rejected.join(', ')}` : '.'}`
     };
 }

@@ -16,8 +16,8 @@ export function generateStickerPdf({ type, allStickers, state, jsPDF }) {
         return {
             ok: false,
             message: type === 'missing'
-                ? "¡Felicidades! Ya no te faltan laminas."
-                : "Aun no tienes laminas repetidas."
+                ? "¡Felicidades! Ya no te faltan láminas."
+                : "Aún no tienes láminas repetidas."
         };
     }
 
@@ -29,7 +29,7 @@ export function generateStickerPdf({ type, allStickers, state, jsPDF }) {
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
     doc.text(`Generado el: ${new Date().toLocaleDateString()}`, 20, 28);
-    doc.text(`Total laminas: ${list.length}`, 20, 33);
+    doc.text(`Total láminas: ${list.length}`, 20, 33);
 
     doc.setFont("helvetica", "normal");
     doc.setTextColor(0, 0, 0);

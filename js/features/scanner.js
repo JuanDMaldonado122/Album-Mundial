@@ -59,19 +59,19 @@ export async function captureAndScan({ video, loader, getAllStickers, updateStic
         const fullCode = (code === 'FWC' && num === '00') ? '00' : `${code} ${num}`;
 
         if (!getAllStickers().includes(fullCode)) {
-            throw new Error("Codigo no reconocido.");
+            throw new Error("Código no reconocido.");
         }
 
         loader.classList.remove('active');
 
-        if (!confirm(`Detecte ${fullCode}. Agregar esta lamina?`)) {
+        if (!confirm(`Detecté ${fullCode}. ¿Agregar esta lámina?`)) {
             return;
         }
 
         updateSticker(fullCode, 1);
         setGuideColor('#C8D400', 1000);
 
-        console.log(`Lamina ${fullCode} agregada.`);
+        console.log(`Lámina ${fullCode} agregada.`);
     } catch (e) {
         console.warn("Scan failed:", e.message);
         setGuideColor('#CC0000', 800);

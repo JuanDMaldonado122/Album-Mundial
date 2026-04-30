@@ -53,7 +53,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                     refreshLocalUI(); 
                 }
             }, (error) => {
-                // Solo mostrar alerta si el usuario sigue logueado (evita error al cerrar sesion)
+                // Solo mostrar alerta si el usuario sigue logueado (evita error al cerrar sesión)
                 if (auth.currentUser && error.message.includes('permission_denied')) {
                     console.error("Firebase Permission Error:", error);
                 }
@@ -206,7 +206,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             updateSticker: window.updateSticker
         });
 
-        addActivity(currentUser.uid, `Agregaste paquete de ${result.accepted.length} laminas`);
+        addActivity(currentUser.uid, `Agregaste paquete de ${result.accepted.length} láminas`);
         resultEl.textContent = result.message;
         input.value = '';
     };
@@ -366,13 +366,13 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             lastFriendSummaries = friendSummaries;
 
             if (friendSummaries.length === 0) {
-                listEl.innerHTML = '<div class="friends-empty"><strong>Sin amigos aun</strong>Agrega el correo de un amigo arriba para ver sus laminas repetidas y encontrar canjes.</div>';
+                listEl.innerHTML = '<div class="friends-empty"><strong>Sin amigos aún</strong>Agrega el correo de un amigo arriba para ver sus láminas repetidas y encontrar canjes.</div>';
                 return;
             }
 
             const myStats = getAlbumStats(window.state);
             const ranking = [
-                { email: 'Tu album', totalOwned: myStats.unique },
+                { email: 'Tu álbum', totalOwned: myStats.unique },
                 ...friendSummaries
             ].sort((a, b) => b.totalOwned - a.totalOwned);
 
@@ -415,7 +415,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         let html = '';
 
         if (iCanGet.length === 0 && iCanGive.length === 0) {
-            html = '<div class="friends-empty"><strong>Sin canjes posibles</strong>Por ahora no hay laminas que coincidan para intercambiar. Vuelve a revisar mas tarde.</div>';
+            html = '<div class="friends-empty"><strong>Sin canjes posibles</strong>Por ahora no hay láminas que coincidan para intercambiar. Vuelve a revisar más tarde.</div>';
         } else {
             const proposalSize = Math.min(iCanGet.length, iCanGive.length, 5);
             window.smartProposalContext = {
@@ -449,11 +449,11 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     window.sendSmartProposal = function() {
         const proposal = window.smartProposalContext;
         if (!proposal || proposal.iCanGet.length === 0 || proposal.iCanGive.length === 0) {
-            alert('No hay una propuesta equilibrada disponible todavia.');
+            alert('No hay una propuesta equilibrada disponible todavía.');
             return;
         }
 
-        const msg = `Hola! Te propongo este canje del album Mundial 2026:\n\nYo te doy: ${proposal.iCanGive.join(', ')}\n\nTu me das: ${proposal.iCanGet.join(', ')}\n\nTe sirve?`;
+        const msg = `Hola! Te propongo este canje del álbum Mundial 2026:\n\nYo te doy: ${proposal.iCanGive.join(', ')}\n\nTú me das: ${proposal.iCanGet.join(', ')}\n\n¿Te sirve?`;
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
     };
 
@@ -487,11 +487,11 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const dups = getDuplicateStickerIds(allStickers, window.state);
         
         if (dups.length === 0) {
-            alert("Aun no tienes laminas repetidas para compartir.");
+            alert("Aún no tienes láminas repetidas para compartir.");
             return;
         }
 
-        const msg = `🏆 *Mundial 2026 - Mis Repetidas*:\n\n${dups.join(', ')}\n\n¿Cual necesitas?`;
+        const msg = `🏆 *Mundial 2026 - Mis Repetidas*:\n\n${dups.join(', ')}\n\n¿Cuál necesitas?`;
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
     };
 
@@ -516,5 +516,5 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             return;
         }
 
-        win.document.write(`<title>Mi album Mundial 2026</title><body style="margin:0;background:#0A0A0A;display:grid;place-items:center;min-height:100vh;"><img src="${dataUrl}" style="width:min(100%,480px);height:auto;display:block;"></body>`);
+        win.document.write(`<title>Mi álbum Mundial 2026</title><body style="margin:0;background:#0A0A0A;display:grid;place-items:center;min-height:100vh;"><img src="${dataUrl}" style="width:min(100%,480px);height:auto;display:block;"></body>`);
     };

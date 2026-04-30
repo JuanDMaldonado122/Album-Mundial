@@ -1,6 +1,6 @@
 {
   "name": "Álbum Mundial 2026",
-  "short_name": "Album 26",
+  "short_name": "Álbum 26",
   "description": "Gestiona tu colección de láminas del Mundial 2026",
   "start_url": "./index.html",
   "display": "standalone",

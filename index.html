@@ -22,21 +22,21 @@
     
     <!-- LOGIN/REGISTER VIEW -->
     <div id="view-auth" class="view">
-        <img src="./assets/images/logo26.png?v=4" class="auth-logo" alt="Album Mundial 2026">
+        <img src="./assets/images/logo26.png?v=4" class="auth-logo" alt="Álbum Mundial 2026">
         <header>
-            <h1>Album 26</h1>
-            <p class="subtitle">Coleccion Oficial de Laminas</p>
+            <h1>Álbum 26</h1>
+            <p class="subtitle">Colección Oficial de Láminas</p>
         </header>
 
         <div class="auth-card">
             <h2 style="margin-top:0; font-size:20px; margin-bottom:6px; font-family:'Bebas Neue',sans-serif; letter-spacing:2px; font-weight:400;">Bienvenido</h2>
-            <p style="color:var(--text-muted); font-size:13px; margin-bottom:24px; line-height:1.5;">Usa el mismo correo en todos los dispositivos de la familia para compartir el album.</p>
+            <p style="color:var(--text-muted); font-size:13px; margin-bottom:24px; line-height:1.5;">Usa el mismo correo en todos los dispositivos de la familia para compartir el álbum.</p>
             
             <form id="auth-form" onsubmit="event.preventDefault(); window.handleLogin();">
-                <input type="email" id="auth-email" class="auth-input" placeholder="Correo electronico" required autocomplete="username">
-                <input type="password" id="auth-password" class="auth-input" placeholder="Contrasena (min 6 caracteres)" required autocomplete="current-password">
+                <input type="email" id="auth-email" class="auth-input" placeholder="Correo electrónico" required autocomplete="username">
+                <input type="password" id="auth-password" class="auth-input" placeholder="Contraseña (mín. 6 caracteres)" required autocomplete="current-password">
                 
-                <button type="submit" class="btn-primary" id="btn-login" style="margin-top: 10px;">Entrar al Album</button>
+                <button type="submit" class="btn-primary" id="btn-login" style="margin-top: 10px;">Entrar al Álbum</button>
                 <button type="button" class="btn-secondary" id="btn-register" onclick="window.location.href='register.html'" style="margin-bottom: 0;">Crear Cuenta Nueva</button>
             </form>
         </div>
@@ -45,15 +45,15 @@
     <!-- HOME VIEW -->
     <div id="view-home" class="view">
         <header>
-            <h1>Album 26</h1>
-            <p class="subtitle">Album Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.0</span></p>
+            <h1>Álbum 26</h1>
+            <p class="subtitle">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.0</span></p>
         </header>
 
         <div class="stats-dashboard">
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-value" id="stat-unq">0 <span class="total">/ 980</span></div>
-                    <div class="stat-label">Unicas</div>
+                    <div class="stat-label">Únicas</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="stat-dup" style="color:var(--fifa-red);">0</div>
@@ -67,17 +67,17 @@
                 <span id="stat-pct">0.0% Completado</span>
                 <span class="sync-badge">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-                    En Linea
+                    En Línea
                 </span>
             </div>
             <div style="text-align: right; margin-top: 12px;">
-                <span class="user-badge" onclick="handleLogout()">Cerrar Sesion</span>
+                <span class="user-badge" onclick="handleLogout()">Cerrar Sesión</span>
             </div>
         </div>
 
         <button class="btn-trade btn-flex" onclick="openTrade()" style="margin-top:8px;">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            Intercambio Rapido
+            Intercambio Rápido
         </button>
 
         <button class="btn-primary btn-flex" onclick="openSummary()">
@@ -125,7 +125,7 @@
             <h2 class="nav-title">Paquete Nuevo</h2>
         </div>
         <div class="trade-card">
-            <label class="trade-label">Codigos del paquete</label>
+            <label class="trade-label">Códigos del paquete</label>
             <textarea id="pack-input" class="pack-input" placeholder="ARG 1&#10;BRA 5&#10;COL 3&#10;FWC 8"></textarea>
             <button class="btn-primary" onclick="addPackStickers()">Agregar Paquete</button>
             <div id="pack-result" class="mini-feedback"></div>
@@ -148,10 +148,10 @@
             <h2 class="nav-title">Intercambio</h2>
         </div>
         <div class="trade-card">
-            <label class="trade-label" style="color: var(--text-muted);">Entrego mi lamina repetida:</label>
+            <label class="trade-label" style="color: var(--text-muted);">Entrego mi lámina repetida:</label>
             <select id="trade-give" class="trade-input"></select>
             <div class="trade-icon" style="color:var(--text-muted); font-size:20px; font-weight:400;">&#8595;</div>
-            <label class="trade-label" style="color: var(--text-muted);">Recibo una lamina nueva:</label>
+            <label class="trade-label" style="color: var(--text-muted);">Recibo una lámina nueva:</label>
             <input type="text" id="trade-receive" class="trade-input" list="dl-all" placeholder="Ej: BRA 1" autocomplete="off">
             <datalist id="dl-all"></datalist>
             <button class="btn-trade" id="btn-execute-trade" onclick="executeTrade()" style="margin-top: 10px; margin-bottom: 0;">
@@ -239,7 +239,7 @@
             <h2 class="nav-title">Amigos y Canjes</h2>
         </div>
         <div class="friend-msg-box">
-            Agrega amigos con su correo para ver que laminas tienen repetidas y encontrar los mejores canjes automaticamente.
+            Agrega amigos con su correo para ver qué láminas tienen repetidas y encontrar los mejores canjes automáticamente.
         </div>
         <div class="friends-search-box">
             <input type="email" id="friend-email-input" placeholder="correo@amigo.com" autocomplete="off" onkeydown="if(event.key==='Enter') addFriend()">
