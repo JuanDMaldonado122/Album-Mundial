@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Crear Cuenta - Álbum Mundial 2026</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#111827">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --fifa-red: #CC0000;
+            --fifa-purple: #5B1F82;
+            --fifa-lime: #C8D400;
+            --dark-bg: #0A0A0A;
+            --card-bg: rgba(20, 20, 20, 0.85);
+            --border-color: rgba(255, 255, 255, 0.12);
+            --text-main: #FFFFFF;
+            --text-muted: #9ca3af;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            margin: 0;
+            font-family: 'Noto Sans', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            overflow-x: hidden;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(204, 0, 0, 0.12), transparent 35%),
+                radial-gradient(circle at 90% 80%, rgba(91, 31, 130, 0.12), transparent 35%);
+            background-attachment: fixed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            padding-top: calc(20px + env(safe-area-inset-top));
+        }
+
+        .register-wrapper {
+            width: 100%;
+            max-width: 420px;
+            animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            font-family: 'Noto Sans', sans-serif;
+            transition: all 0.2s;
+            margin-bottom: 24px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .back-btn:active { transform: scale(0.97); }
+        .back-btn svg { width: 16px; height: 16px; stroke: currentColor; }
+
+        .logo-wrap {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .auth-logo {
+            width: 120px;
+            height: 120px;
+            border-radius: 30px;
+            display: block;
+            margin: 0 auto 16px;
+            box-shadow: 0 10px 30px rgba(217, 70, 239, 0.4);
+            object-fit: cover;
+            border: 2px solid var(--border-color);
+        }
+
+        h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 42px;
+            font-weight: 400;
+            letter-spacing: 3px;
+            margin: 0 0 4px 0;
+            color: var(--fifa-red);
+            text-transform: uppercase;
+        }
+        .subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin: 0;
+        }
+
+        .register-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 6px;
+            padding: 28px 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+
+        .card-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 24px;
+            font-weight: 400;
+            margin: 0 0 6px 0;
+            color: var(--text-main);
+            letter-spacing: 2px;
+        }
+
+        .card-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin: 0 0 28px 0;
+            line-height: 1.5;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .auth-input {
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 16px 18px;
+            border-radius: 12px;
+            font-size: 16px;
+            outline: none;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+        .auth-input:focus {
+            border-color: var(--fifa-red);
+            box-shadow: 0 0 0 2px rgba(204, 0, 0, 0.2);
+        }
+        .auth-input::placeholder { color: rgba(148,163,184,0.5); }
+
+        .btn-primary {
+            width: 100%;
+            background: var(--fifa-red);
+            color: white;
+            border: none;
+            padding: 18px;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(204, 0, 0, 0.4);
+            transition: transform 0.15s, box-shadow 0.15s;
+            margin-top: 8px;
+            font-family: 'Noto Sans', sans-serif;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        .btn-primary:active { transform: scale(0.98); }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            background: transparent;
+            border: 2px solid rgba(255,255,255,0.2);
+            color: var(--text-main);
+            padding: 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Noto Sans', sans-serif;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        .btn-secondary:active { transform: scale(0.98); background: rgba(255,255,255,0.05); }
+
+        .tip-box {
+            background: rgba(200, 212, 0, 0.06);
+            border: 1px solid rgba(200, 212, 0, 0.2);
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 24px;
+            font-size: 12px;
+            color: var(--fifa-lime);
+            font-weight: 600;
+            line-height: 1.5;
+        }
+        .tip-box span { font-weight: 900; }
+
+        #status-msg {
+            text-align: center;
+            font-size: 14px;
+            font-weight: 700;
+            min-height: 22px;
+            margin-top: 12px;
+            color: var(--text-muted);
+        }
+        #status-msg.error { color: #ff4444; }
+        #status-msg.success { color: var(--fifa-lime); }
+
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="register-wrapper">
+
+    <a href="index.html" class="back-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 18l-6-6 6-6"/>
+        </svg>
+        Volver al inicio
+    </a>
+
+    <div class="logo-wrap">
+        <img src="logo26.png?v=4" class="auth-logo" alt="Album Mundial 2026">
+        <h1>Album 26</h1>
+        <p class="subtitle">Crear Cuenta</p>
+    </div>
+
+    <div class="register-card">
+        <h2 class="card-title">Crear Cuenta Familiar</h2>
+        <p class="card-desc">Crea una cuenta para sincronizar el album en todos los dispositivos de la familia en tiempo real.</p>
+
+        <div class="tip-box">
+            Usa el mismo correo en todos los telefonos de la familia para compartir el album automaticamente.
+        </div>
+
+        <form id="register-form" onsubmit="event.preventDefault(); doRegister();">
+            <div class="input-group">
+                <label class="input-label" for="reg-email">Correo Electrónico</label>
+                <input type="email" id="reg-email" class="auth-input" placeholder="familia@ejemplo.com" required autocomplete="email">
+            </div>
+            <div class="input-group">
+                <label class="input-label" for="reg-pass">Contraseña</label>
+                <input type="password" id="reg-pass" class="auth-input" placeholder="Mínimo 6 caracteres" required autocomplete="new-password" minlength="6">
+            </div>
+            <div class="input-group">
+                <label class="input-label" for="reg-pass2">Confirmar Contraseña</label>
+                <input type="password" id="reg-pass2" class="auth-input" placeholder="Repite la contraseña" required autocomplete="new-password" minlength="6">
+            </div>
+
+            <button type="submit" class="btn-primary" id="btn-register">
+                Crear Mi Cuenta
+            </button>
+            <div id="status-msg"></div>
+        </form>
+
+        <div class="divider">o si ya tienes cuenta</div>
+
+        <button class="btn-secondary" onclick="window.location.href='index.html'">
+            Entrar al Album
+        </button>
+    </div>
+
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDtC4Gv9XAz1x7pVdAZH30Q7gMPp5nZu2I",
+        authDomain: "mundial-2026-db01a.firebaseapp.com",
+        projectId: "mundial-2026-db01a",
+        storageBucket: "mundial-2026-db01a.firebasestorage.app",
+        messagingSenderId: "991126519914",
+        appId: "1:991126519914:web:a0bf9aa795c141d4180a13",
+        databaseURL: "https://mundial-2026-db01a-default-rtdb.firebaseio.com"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    setPersistence(auth, browserLocalPersistence).catch(e => console.error(e));
+
+    window.doRegister = async () => {
+        const email = document.getElementById('reg-email').value.trim();
+        const pass  = document.getElementById('reg-pass').value;
+        const pass2 = document.getElementById('reg-pass2').value;
+        const btn   = document.getElementById('btn-register');
+        const msg   = document.getElementById('status-msg');
+
+        msg.className = '';
+        msg.innerHTML = '';
+
+        if (!email || !pass) {
+            msg.className = 'error';
+            msg.textContent = '❌ Completa todos los campos.';
+            return;
+        }
+        if (pass.length < 6) {
+            msg.className = 'error';
+            msg.textContent = '❌ La contraseña debe tener al menos 6 caracteres.';
+            return;
+        }
+        if (pass !== pass2) {
+            msg.className = 'error';
+            msg.textContent = '❌ Las contraseñas no coinciden.';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>Creando cuenta...';
+
+        try {
+            await createUserWithEmailAndPassword(auth, email, pass);
+            msg.className = 'success';
+            msg.textContent = '✅ ¡Cuenta creada! Redirigiendo al álbum...';
+            setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+        } catch (err) {
+            btn.disabled = false;
+            btn.innerHTML = 'Crear Mi Cuenta';
+            msg.className = 'error';
+            if (err.code === 'auth/email-already-in-use') {
+                msg.textContent = 'Este correo ya tiene cuenta. Entra desde la pantalla principal.';
+            } else if (err.code === 'auth/admin-restricted-operation') {
+                msg.textContent = 'Activa Email/Contrasena en Firebase Authentication.';
+            } else {
+                msg.textContent = 'Error: ' + err.message;
+            }
+        }
+    };
+</script>
+
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        // Solo el dueño puede escribir en su perfil
+        ".write": "auth != null && auth.uid == $uid",
+        // Cualquiera autenticado puede LEER (necesario para la funcion de Amigos/Canjes)
+        ".read": "auth != null"
+      }
+    },
+    "emailIndex": {
+      // Necesario para buscar amigos por correo
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "profiles": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    }
+  }
+}
