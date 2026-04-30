@@ -1,9 +1,17 @@
-const CACHE_NAME = 'mundial-26-cache-v5';
+const CACHE_NAME = 'mundial-26-cache-v6';
 const urlsToCache = [
   './',
   './index.html',
+  './register.html',
+  './css/styles.css',
+  './css/register.css',
+  './js/app.js',
+  './js/register.js',
+  './js/config/firebaseConfig.js',
+  './js/data/albumData.js',
   './manifest.json',
-  './logo26.png'
+  './assets/images/logo26.png',
+  './assets/images/icon.png'
 ];
 
 self.addEventListener('install', event => {

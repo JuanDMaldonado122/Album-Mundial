@@ -1,0 +1,691 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { getDatabase, ref, onValue, update, get, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { firebaseConfig } from "./config/firebaseConfig.js";
+import { albumDatabase } from "./data/albumData.js";
+
+    // 2. Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+
+    // 3. Database State
+    window.state = {};
+    window.currentTeamContext = null; 
+    let stateRef = null;
+    let currentUser = null;
+    let unsubscribeAlbum = null;
+
+    /* === AUTHENTICATION LOGIC === */
+    // Asegurar que la sesión quede guardada permanentemente
+    setPersistence(auth, browserLocalPersistence).catch(err => console.error("Persistence Error:", err));
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUser = user;
+            stateRef = ref(db, 'users/' + user.uid + '/album');
+            
+            // Show Scanner Button
+            document.getElementById('fab-scan').style.display = 'flex';
+            
+            // Register email in index for friend lookup
+            const emailKey = user.email.replace(/\./g, ',');
+            set(ref(db, 'emailIndex/' + emailKey), user.uid).catch(() => {});
+            set(ref(db, 'profiles/' + user.uid + '/email'), user.email).catch(() => {});
+            
+            // Try loading local state first for speed
+            const local = localStorage.getItem(`album-2026-${user.uid}`);
+            if (local) window.state = JSON.parse(local);
+            else window.state = {};
+
+            // Detach previous listener if exists
+            if (unsubscribeAlbum) unsubscribeAlbum();
+
+            // Listen for Cloud Data for this specific user
+            unsubscribeAlbum = onValue(stateRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    window.state = snapshot.val();
+                    localStorage.setItem(`album-2026-${user.uid}`, JSON.stringify(window.state));
+                    refreshLocalUI(); 
+                }
+            }, (error) => {
+                // Solo mostrar alerta si el usuario sigue logueado (evita error al cerrar sesion)
+                if (auth.currentUser && error.message.includes('permission_denied')) {
+                    console.error("Firebase Permission Error:", error);
+                }
+            });
+
+            window.goHome(); // Show app
+        } else {
+            // User is signed out
+            if (unsubscribeAlbum) { unsubscribeAlbum(); unsubscribeAlbum = null; }
+            currentUser = null;
+            stateRef = null;
+            window.state = {};
+            document.getElementById('fab-scan').style.display = 'none';
+            window.switchView('view-auth', false); // Show login screen
+        }
+    });
+
+    window.handleLogin = () => {
+        const emailInput = document.getElementById('auth-email');
+        const passInput = document.getElementById('auth-password');
+        const email = emailInput ? emailInput.value.trim() : "";
+        const pass = passInput ? passInput.value : "";
+        
+        if(!email || !pass) return alert("❌ Por favor, llena tu correo y contraseña.");
+        
+        signInWithEmailAndPassword(auth, email, pass)
+            .catch(err => {
+                console.error(err);
+                if(err.code === 'auth/invalid-credential') alert("❌ Correo o contraseña incorrectos. Si no tienes cuenta, haz clic en Crear Cuenta.");
+                else alert("⚠️ Error al entrar: " + err.message + "\n\nSi el error dice 'configuration-not-found', debes ir a tu consola de Firebase -> Authentication y habilitar el inicio de sesión por Correo/Contraseña.");
+            });
+    };
+
+    window.handleRegister = () => {
+        const emailInput = document.getElementById('auth-email');
+        const passInput = document.getElementById('auth-password');
+        const email = emailInput ? emailInput.value.trim() : "";
+        const pass = passInput ? passInput.value : "";
+        
+        if(!email || !pass) return alert("❌ Por favor, llena tu correo y contraseña.");
+        if(pass.length < 6) return alert("❌ La contraseña debe tener al menos 6 caracteres.");
+
+        createUserWithEmailAndPassword(auth, email, pass)
+            .catch(err => {
+                console.error(err);
+                if(err.code === 'auth/email-already-in-use') alert("❌ Este correo ya tiene una cuenta. Haz clic en 'Entrar al Álbum'.");
+                else if(err.code === 'auth/admin-restricted-operation') alert("⚠️ Error de permisos. ¡Recuerda habilitar el proveedor de Email/Contraseña en la consola de Firebase Authentication!");
+                else alert("⚠️ Error al crear cuenta: " + err.message + "\n\nSi el error es raro, asegúrate de haber habilitado el inicio de sesión por Correo/Contraseña en Firebase Authentication.");
+            });
+    };
+
+    window.handleLogout = () => {
+        if(confirm("¿Seguro que quieres cerrar sesión de tu álbum familiar?")) {
+            signOut(auth);
+        }
+    };
+
+
+    /* === ALBUM LOGIC === */
+    window.updateSticker = function(id, delta) {
+        if (!currentUser || !stateRef) return;
+
+        const newVal = (window.state[id] || 0) + delta;
+        if (newVal < 0) return; 
+        
+        // Optimistic local update
+        window.state[id] = newVal;
+        localStorage.setItem(`album-2026-${currentUser.uid}`, JSON.stringify(window.state));
+        refreshLocalUI();
+
+        // Push to Cloud
+        update(stateRef, { [id]: newVal }).catch(e => console.error("Firebase Update Error:", e));
+    };
+
+    window.DB = albumDatabase;
+
+    window.refreshLocalUI = function() {
+        if(window.updateStats) window.updateStats();
+        
+        if (document.getElementById('view-team').classList.contains('active') && window.currentTeamContext) {
+            window.openTeam(window.currentTeamContext.code, window.currentTeamContext.name, window.currentTeamContext.isSpecial);
+        } else if (document.getElementById('view-summary').classList.contains('active')) {
+            window.openSummary();
+        }
+    };
+
+    window.updateStats = function() {
+        let unq = 0; let dup = 0;
+        for(let k in window.state) {
+            if (window.state[k] > 0) unq++;
+            if (window.state[k] > 1) dup += (window.state[k] - 1);
+        }
+        const MAX_TOTAL = 980;
+        const pct = ((unq / MAX_TOTAL) * 100).toFixed(1);
+        
+        document.getElementById('stat-unq').innerHTML = `${unq} <span class="total">/ ${MAX_TOTAL}</span>`;
+        document.getElementById('stat-dup').innerText = `${dup}`;
+        document.getElementById('stat-pct').innerText = `${pct}% Listo`;
+        document.getElementById('progress-bar').style.width = `${pct}%`;
+    };
+
+    window.shareWsp = function() {
+        let repetidas = [];
+        for(let key in window.state) if(window.state[key] > 1) repetidas.push(`🚨 ${key} (x${window.state[key]-1})`);
+        if(repetidas.length === 0) { alert("No tienes repetidas para intercambiar aún."); return; }
+        repetidas.sort();
+        let text = "🏆 *Mis Láminas Repetidas - Mundial 2026* 🏆\n\n" + repetidas.join('\n') + "\n\n♻️ ¿Cuáles te sirven? ¡Escríbeme! ⚽";
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+    };
+
+    window.getAllStickers = function() {
+        let all = [...window.DB.especial];
+        window.DB.groups.forEach(g => g.teams.forEach(t => { for(let i=1;i<=20;i++) all.push(`${t.code} ${i}`); }));
+        return all;
+    };
+
+    window.openTrade = function() {
+        document.getElementById('trade-receive').value = '';
+        let all = window.getAllStickers();
+        let repetidas = all.filter(id => (window.state[id] || 0) > 1);
+        
+        const selGive = document.getElementById('trade-give');
+        const btnExe = document.getElementById('btn-execute-trade');
+        
+        if (repetidas.length === 0) {
+            selGive.innerHTML = '<option value="">No tienes láminas repetidas aún</option>';
+            selGive.disabled = true; btnExe.disabled = true;
+        } else {
+            selGive.disabled = false; btnExe.disabled = false;
+            selGive.innerHTML = '<option value="" disabled selected>Elige cuál lámina entregas...</option>' + 
+                repetidas.map(id => `<option value="${id}">${id} (Tienes ${window.state[id] - 1} extras)</option>`).join('');
+        }
+
+        const datalist = document.getElementById('dl-all');
+        if(datalist.options.length === 0) {
+            datalist.innerHTML = all.map(id => `<option value="${id}">`).join('');
+        }
+        window.switchView('view-trade');
+    };
+
+    window.executeTrade = function() {
+        const give = document.getElementById('trade-give').value;
+        const recRaw = document.getElementById('trade-receive').value;
+        const rec = recRaw ? recRaw.trim().toUpperCase() : '';
+
+        if (!give) { alert("Selecciona qué lámina entregas."); return; }
+        if (!rec) { alert("Escribe qué lámina recibes."); return; }
+        if (!window.getAllStickers().includes(rec)) {
+            alert("El código que recibes no es válido. Ejemplos válidos: FWC 1, MEX 10, ARG 5"); return;
+        }
+        if (window.state[give] < 2) { alert("Ya no tienes la lámina que entregas repetida."); window.openTrade(); return; }
+
+        if (confirm(`¿Confirmas que entregas ${give} a cambio de recibir ${rec}?`)) {
+            window.updateSticker(give, -1);
+            window.updateSticker(rec, 1);
+            alert(`✅ ¡Cambio registrado y SINCRONIZADO!\n\nMenos: 1 de ${give}\nMás: 1 de ${rec}`);
+            window.openTrade(); 
+        }
+    };
+
+    window.switchView = function(viewId, pushState = true) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById(viewId).classList.add('active');
+        window.scrollTo(0,0);
+        if (pushState && viewId !== 'view-auth') {
+            history.pushState({ view: viewId }, '', '#' + viewId);
+        }
+    };
+
+    // Handle iOS swipe back / browser back button
+    window.addEventListener('popstate', (e) => {
+        const currentActive = document.querySelector('.view.active');
+        const id = currentActive ? currentActive.id : null;
+        if (!id || id === 'view-auth' || id === 'view-home') {
+            // nothing to go back to
+        } else if (id === 'view-friend-trades') {
+            window.openFriends();
+        } else {
+            window.goHome();
+        }
+    });
+
+    window.goHome = function() { 
+        if(!currentUser) return window.switchView('view-auth', false);
+        window.switchView('view-home', false);
+        history.replaceState({ view: 'view-home' }, '', '#home');
+        window.updateStats(); 
+    };
+
+    window.toggleGroup = function(groupId) {
+        document.querySelectorAll('.group-card').forEach(card => {
+            if(card.id === groupId) card.classList.toggle('open'); 
+            else card.classList.remove('open');
+        });
+    };
+
+    window.filterTeams = function() {
+        const query = document.getElementById('team-search').value.toLowerCase().trim();
+        const cards = document.querySelectorAll('.group-card');
+        
+        cards.forEach(card => {
+            const text = card.innerText.toLowerCase();
+            if (text.includes(query)) {
+                card.style.display = 'block';
+                // Si la búsqueda es muy específica, abrir el grupo automáticamente
+                if (query.length > 2 && text.includes(query)) {
+                    // Solo si no estamos buscando algo muy genérico como "grupo"
+                    if (!"grupo".includes(query)) card.classList.add('open');
+                }
+            } else {
+                card.style.display = 'none';
+                card.classList.remove('open');
+            }
+        });
+        
+        // Si no hay búsqueda, cerrar todo
+        if (!query) {
+            cards.forEach(c => {
+                c.style.display = 'block';
+                c.classList.remove('open');
+            });
+        }
+    };
+
+    window.openTeam = function(teamCode, teamName, isSpecial = false) {
+        window.currentTeamContext = {code: teamCode, name: teamName, isSpecial};
+        
+        document.getElementById('team-title').innerText = teamName;
+        let stickers = isSpecial ? window.DB.especial : Array.from({length: 20}, (_, i) => `${teamCode} ${i+1}`);
+        const grid = document.getElementById('sticker-grid');
+        grid.innerHTML = '';
+        stickers.forEach(id => grid.appendChild(window.createStickerEl(id)));
+        window.switchView('view-team');
+    };
+
+    window.openSummary = function() {
+        let m = [], g = [], d = [];
+        window.getAllStickers().forEach(id => {
+            let count = window.state[id] || 0;
+            if(count === 0) m.push(id);
+            else if(count === 1) g.push(id);
+            else d.push(`${id} (+${count-1})`);
+        });
+
+        document.getElementById('count-missing').innerText = m.length;
+        document.getElementById('count-got').innerText = g.length;
+        document.getElementById('count-dup').innerText = d.length;
+
+        const populate = (elId, arr, cssClass) => {
+            const el = document.getElementById(elId);
+            if (arr.length === 0) el.innerHTML = `<div class="empty-state">No hay láminas en esta lista.</div>`;
+            else el.innerHTML = arr.map(i => `<div class="code-tag ${cssClass}">${i}</div>`).join('');
+        };
+
+        populate('content-missing', m, ''); populate('content-got', g, 'got'); populate('content-dup', d, 'dup');
+        window.switchView('view-summary');
+    };
+
+    window.switchTab = function(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.summary-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(`tab-${tabId}`).classList.add('active');
+        document.getElementById(`content-${tabId}`).classList.add('active');
+    };
+
+    window.createStickerEl = function(id) {
+        const el = document.createElement('div');
+        el.className = 'sticker';
+        const count = window.state[id] || 0;
+        
+        if (count == 1) el.classList.add('status-1');
+        else if (count > 1) el.classList.add('status-2');
+        
+        const codeSpan = document.createElement('div');
+        codeSpan.className = 'sticker-code';
+        const parts = id.split(' ');
+        if(parts.length > 1) codeSpan.innerHTML = `${parts[0]}<br>${parts[1]}`;
+        else codeSpan.innerText = id;
+        el.appendChild(codeSpan);
+        
+        if (count > 1) {
+            const badge = document.createElement('div');
+            badge.className = 'badge-count';
+            badge.innerText = `+${count - 1}`;
+            el.appendChild(badge);
+        }
+        if (count > 0) {
+            const minusBtn = document.createElement('div');
+            minusBtn.className = 'btn-minus';
+            minusBtn.innerHTML = '&minus;';
+            minusBtn.onclick = (e) => {
+                e.stopPropagation(); window.updateSticker(id, -1);
+            };
+            el.appendChild(minusBtn);
+        }
+        
+        el.onclick = () => { window.updateSticker(id, 1); };
+        return el;
+    }
+
+    // BOOTSTRAP INITIALIZATION
+    window.onload = () => {
+        // Init SW 
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(e=>{});
+
+        const list = document.getElementById('group-list');
+        
+        const espCard = document.createElement('div');
+        espCard.className = 'group-card';
+        espCard.id = 'group-especiales';
+        espCard.innerHTML = `<div class="group-header" onclick="openTeam('FWC', 'Sección Especial', true)">
+            <div class="group-meta">
+                <div>🌟 Sección Especial</div>
+                <div class="group-acronyms">Lámina 00, FWC 1 - FWC 19</div>
+            </div>
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(-90deg);"><path d="M6 9l6 6 6-6"/></svg>
+        </div>`;
+        list.appendChild(espCard);
+
+        window.DB.groups.forEach((g, idx) => {
+            const card = document.createElement('div');
+            card.className = 'group-card';
+            const cardId = `group-${idx}`;
+            card.id = cardId; 
+            const acronyms = g.teams.map(t => t.code).join(', '); 
+            
+            card.innerHTML = `
+                <div class="group-header" onclick="toggleGroup('${cardId}')">
+                    <div class="group-meta">
+                        <div>${g.name}</div>
+                        <div class="group-acronyms">${acronyms}</div>
+                    </div>
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="group-content">
+                    <div class="teams-grid">
+                        ${g.teams.map(t => `<button class="team-btn" onclick="openTeam('${t.code}', '${t.name}')"><span class="team-code">${t.code}</span><span>${t.name}</span></button>`).join('')}
+                    </div>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+        
+        // Wait for onAuthStateChanged to show a view
+
+        // Handle direct reload on a hash
+        if (!location.hash || location.hash === '#home') {
+            history.replaceState({ view: 'view-home' }, '', '#home');
+        }
+    };
+
+    /* === FRIENDS LOGIC === */
+    window.openFriends = function() {
+        window.switchView('view-friends');
+        window.renderFriends();
+    };
+
+    window.addFriend = async function() {
+        const input = document.getElementById('friend-email-input');
+        const status = document.getElementById('friends-status');
+        const email = (input.value || '').trim().toLowerCase();
+        if (!email) return;
+        if (!currentUser) return;
+
+        status.className = '';
+        status.textContent = 'Buscando...';
+
+        const CACHE_NAME = 'mundial-26-cache-v6';
+        const emailKey = email.replace(/\./g, ',');
+        try {
+            const snap = await get(ref(db, 'emailIndex/' + emailKey));
+            if (!snap.exists()) {
+                status.className = 'err';
+                status.textContent = 'No se encontro un usuario con ese correo.';
+                return;
+            }
+            const friendUid = snap.val();
+            if (friendUid === currentUser.uid) {
+                status.className = 'err';
+                status.textContent = 'No puedes agregarte a ti mismo.';
+                return;
+            }
+            await set(ref(db, 'users/' + currentUser.uid + '/friends/' + friendUid), email);
+            input.value = '';
+            status.className = 'ok';
+            status.textContent = 'Amigo agregado correctamente.';
+            window.renderFriends();
+            setTimeout(() => { status.textContent = ''; status.className = ''; }, 3000);
+        } catch(e) {
+            status.className = 'err';
+            status.textContent = 'Error al buscar. Verifica las reglas de Firebase.';
+        }
+    };
+
+    window.renderFriends = async function() {
+        if (!currentUser) return;
+        const listEl = document.getElementById('friends-list');
+        listEl.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:10px 0;">Cargando...</div>';
+
+        try {
+            const snap = await get(ref(db, 'users/' + currentUser.uid + '/friends'));
+            if (!snap.exists()) {
+                listEl.innerHTML = '<div class="friends-empty"><strong>Sin amigos aun</strong>Agrega el correo de un amigo arriba para ver sus laminas repetidas y encontrar canjes.</div>';
+                return;
+            }
+            const friends = snap.val(); // { uid: email }
+            const allStickers = window.getAllStickers();
+            const myMissing = new Set(allStickers.filter(id => (window.state[id] || 0) === 0));
+
+            listEl.innerHTML = '';
+            const entries = Object.entries(friends);
+
+            for (const [fUid, fEmail] of entries) {
+                let fState = {};
+                try {
+                    const fSnap = await get(ref(db, 'users/' + fUid + '/album'));
+                    if (fSnap.exists()) fState = fSnap.val();
+                } catch(e) {}
+
+                const fDups = allStickers.filter(id => (fState[id] || 0) > 1);
+                const matches = fDups.filter(id => myMissing.has(id));
+
+                const card = document.createElement('div');
+                card.className = 'friend-card';
+                card.innerHTML = `
+                    <div class="friend-info">
+                        <div class="friend-email">${fEmail}</div>
+                        <div class="friend-stats">${fDups.length} repetidas&nbsp;&nbsp;·&nbsp;&nbsp;${Object.keys(fState).filter(k => fState[k] > 0).length} en total</div>
+                    </div>
+                    ${matches.length > 0 ? `<div class="friend-match-badge">${matches.length} canjes</div>` : ''}
+                    <svg class="friend-arrow" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                `;
+                card.onclick = () => window.viewFriendTrades(fUid, fEmail, fState);
+                listEl.appendChild(card);
+            }
+        } catch(e) {
+            listEl.innerHTML = '<div class="friends-empty"><strong>Error</strong>No se pudieron cargar los amigos. Verifica las reglas de Firebase Database.</div>';
+        }
+    };
+
+    window.viewFriendTrades = function(fUid, fEmail, fState) {
+        document.getElementById('friend-trade-title').textContent = fEmail.split('@')[0].toUpperCase();
+        window.switchView('view-friend-trades');
+
+        const allStickers = window.getAllStickers();
+        const myMissing = allStickers.filter(id => (window.state[id] || 0) === 0);
+        const myDups = allStickers.filter(id => (window.state[id] || 0) > 1);
+        const fMissing = allStickers.filter(id => (fState[id] || 0) === 0);
+        const fDups = allStickers.filter(id => (fState[id] || 0) > 1);
+
+        // What friend has repeated that I need
+        const iCanGet = fDups.filter(id => myMissing.includes(id));
+        // What I have repeated that friend needs
+        const iCanGive = myDups.filter(id => fMissing.includes(id));
+
+        const content = document.getElementById('friend-trades-content');
+
+        let html = '';
+
+        if (iCanGet.length === 0 && iCanGive.length === 0) {
+            html = '<div class="friends-empty"><strong>Sin canjes posibles</strong>Por ahora no hay laminas que coincidan para intercambiar. Vuelve a revisar mas tarde.</div>';
+        } else {
+            if (iCanGet.length > 0) {
+                html += `<div class="match-give"><div class="match-section-title">Ellos te pueden dar (${iCanGet.length})</div><div class="match-tags">${iCanGet.map(id => `<div class="match-tag give">${id}</div>`).join('')}</div></div>`;
+            }
+            if (iCanGive.length > 0) {
+                html += `<div class="match-take"><div class="match-section-title">Tu les puedes dar (${iCanGive.length})</div><div class="match-tags">${iCanGive.map(id => `<div class="match-tag take">${id}</div>`).join('')}</div></div>`;
+            }
+            // WhatsApp share button
+            const msgLines = [];
+            if (iCanGet.length) msgLines.push('*Necesito de ti:* ' + iCanGet.join(', '));
+            if (iCanGive.length) msgLines.push('*Yo te puedo dar:* ' + iCanGive.join(', '));
+            const msg = `Hola! Revisé nuestros álbumes del Mundial 2026:\n\n${msgLines.join('\n\n')}\n\nCoordina conmigo!`;
+            html += `<button class="btn-secondary btn-flex" style="margin-top:28px;" onclick="window.open('https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}','_blank')">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="var(--text-main)"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                Coordinar por WhatsApp
+            </button>`;
+        }
+        content.innerHTML = html;
+    };
+
+    /* === SCANNER LOGIC === */
+    let scannerStream = null;
+
+    window.openScanner = async function() {
+        const video = document.getElementById('scanner-video');
+        const fab = document.getElementById('fab-scan');
+        
+        try {
+            scannerStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'environment', focusMode: 'continuous' } 
+            });
+            video.srcObject = scannerStream;
+            window.switchView('view-scanner', true);
+            fab.style.display = 'none';
+        } catch (err) {
+            console.error("Camera Error:", err);
+            alert("⚠️ No se pudo acceder a la camara. Asegurate de dar permisos en tu iPhone.");
+        }
+    };
+
+    window.closeScanner = function() {
+        if (scannerStream) {
+            scannerStream.getTracks().forEach(track => track.stop());
+            scannerStream = null;
+        }
+        document.getElementById('fab-scan').style.display = 'flex';
+        window.goHome();
+    };
+
+    window.captureAndScan = async function() {
+        const video = document.getElementById('scanner-video');
+        const loader = document.getElementById('scanner-loader');
+        const canvas = document.createElement('canvas');
+        
+        // Setup canvas to capture center area (guide)
+        canvas.width = 640;
+        canvas.height = 480;
+        const ctx = canvas.getContext('2d');
+        
+        // Draw video frame to canvas
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        loader.classList.add('active');
+        
+        try {
+            // Process with Tesseract
+            const { data: { text } } = await Tesseract.recognize(canvas, 'eng');
+            console.log("OCR Result:", text);
+            
+            // Search for sticker patterns (e.g., BRA 1, MEX 10, FWC 1)
+            // Regex to find: 3 uppercase letters + space + number
+            const match = text.match(/([A-Z]{3}|FWC)\s?(\d{1,2})/i);
+            
+            if (match) {
+                const code = match[1].toUpperCase().trim();
+                const num = match[2].trim();
+                const fullCode = (code === 'FWC' && num === '00') ? '00' : `${code} ${num}`;
+                
+                // Validate if it exists in our DB
+                const all = window.getAllStickers();
+                if (all.includes(fullCode)) {
+                    loader.classList.remove('active');
+                    // Add directly or ask simply
+                    window.updateSticker(fullCode, 1);
+                    
+                    // Visual feedback instead of blocking alert
+                    const guide = document.querySelector('.scanner-guide');
+                    guide.style.borderColor = '#C8D400';
+                    setTimeout(() => { guide.style.borderColor = ''; }, 1000);
+                    
+                    console.log(`Lámina ${fullCode} agregada.`);
+                } else {
+                    throw new Error("Código no reconocido.");
+                }
+            } else {
+                throw new Error("No detectado.");
+            }
+        } catch (e) {
+            console.warn("Scan failed:", e.message);
+            // Show brief error in guide
+            const guide = document.querySelector('.scanner-guide');
+            guide.style.borderColor = '#CC0000';
+            setTimeout(() => { guide.style.borderColor = ''; }, 800);
+        } finally {
+            loader.classList.remove('active');
+            // Video keeps playing, user can tap again immediately
+        }
+    };
+
+    /* === EXPORT LOGIC === */
+    window.shareRepeated = function() {
+        const allStickers = window.getAllStickers();
+        const dups = allStickers.filter(id => (window.state[id] || 0) > 1);
+        
+        if (dups.length === 0) {
+            alert("Aun no tienes laminas repetidas para compartir.");
+            return;
+        }
+
+        const msg = `🏆 *Mundial 2026 - Mis Repetidas*:\n\n${dups.join(', ')}\n\n¿Cual necesitas?`;
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+    };
+
+    window.generatePDF = function(type) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const allStickers = window.getAllStickers();
+        
+        let list = [];
+        let titleText = "";
+        
+        if (type === 'missing') {
+            list = allStickers.filter(id => (window.state[id] || 0) === 0);
+            titleText = "LÁMINAS FALTANTES - MUNDIAL 2026";
+        } else {
+            list = allStickers.filter(id => (window.state[id] || 0) > 1);
+            titleText = "LÁMINAS REPETIDAS - MUNDIAL 2026";
+        }
+
+        if (list.length === 0) {
+            alert(type === 'missing' ? "¡Felicidades! Ya no te faltan laminas." : "Aun no tienes laminas repetidas.");
+            return;
+        }
+
+        // Title
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.setTextColor(204, 0, 0); // FIFA RED
+        doc.text(titleText, 20, 20);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Generado el: ${new Date().toLocaleDateString()}`, 20, 28);
+        doc.text(`Total laminas: ${list.length}`, 20, 33);
+
+        // Content
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        
+        let y = 45;
+        let x = 20;
+        const colWidth = 35;
+
+        list.forEach((code) => {
+            doc.text(code, x, y);
+            x += colWidth;
+            if (x > 180) {
+                x = 20;
+                y += 8;
+            }
+            if (y > 280) {
+                doc.addPage();
+                y = 20;
+            }
+        });
+
+        doc.save(`${type === 'missing' ? 'Faltantes' : 'Repetidas'}_Mundial2026.pdf`);
+    };
