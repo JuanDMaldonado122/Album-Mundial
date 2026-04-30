@@ -3,7 +3,8 @@ import { generateStickerPdf } from "./features/pdfExport.js";
 import { loginUser, logoutUser, persistAuthSession, registerUser, watchAuthState } from "./services/authService.js";
 import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists, getTeamStickers } from "./services/albumService.js";
 import { auth, db } from "./services/firebaseService.js";
-import { ref, onValue, update, get, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+import { addFriendByEmail, getFriendSummaries, getFriendTradeMatches, registerUserForFriendLookup } from "./services/friendsService.js";
+import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
     // 3. Database State
     window.state = {};
@@ -25,9 +26,7 @@ import { ref, onValue, update, get, set } from "https://www.gstatic.com/firebase
             document.getElementById('fab-scan').style.display = 'flex';
             
             // Register email in index for friend lookup
-            const emailKey = user.email.replace(/\./g, ',');
-            set(ref(db, 'emailIndex/' + emailKey), user.uid).catch(() => {});
-            set(ref(db, 'profiles/' + user.uid + '/email'), user.email).catch(() => {});
+            registerUserForFriendLookup(user).catch(() => {});
             
             // Try loading local state first for speed
             const local = localStorage.getItem(`album-2026-${user.uid}`);
@@ -399,22 +398,21 @@ import { ref, onValue, update, get, set } from "https://www.gstatic.com/firebase
         status.className = '';
         status.textContent = 'Buscando...';
 
-        const CACHE_NAME = 'mundial-26-cache-v6';
-        const emailKey = email.replace(/\./g, ',');
         try {
-            const snap = await get(ref(db, 'emailIndex/' + emailKey));
-            if (!snap.exists()) {
+            const result = await addFriendByEmail(currentUser, email);
+
+            if (!result.ok && result.reason === 'not-found') {
                 status.className = 'err';
                 status.textContent = 'No se encontro un usuario con ese correo.';
                 return;
             }
-            const friendUid = snap.val();
-            if (friendUid === currentUser.uid) {
+
+            if (!result.ok && result.reason === 'self') {
                 status.className = 'err';
                 status.textContent = 'No puedes agregarte a ti mismo.';
                 return;
             }
-            await set(ref(db, 'users/' + currentUser.uid + '/friends/' + friendUid), email);
+
             input.value = '';
             status.className = 'ok';
             status.textContent = 'Amigo agregado correctamente.';
@@ -432,60 +430,40 @@ import { ref, onValue, update, get, set } from "https://www.gstatic.com/firebase
         listEl.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:10px 0;">Cargando...</div>';
 
         try {
-            const snap = await get(ref(db, 'users/' + currentUser.uid + '/friends'));
-            if (!snap.exists()) {
+            const allStickers = window.getAllStickers();
+            const friendSummaries = await getFriendSummaries(currentUser, allStickers, window.state);
+
+            if (friendSummaries.length === 0) {
                 listEl.innerHTML = '<div class="friends-empty"><strong>Sin amigos aun</strong>Agrega el correo de un amigo arriba para ver sus laminas repetidas y encontrar canjes.</div>';
                 return;
             }
-            const friends = snap.val(); // { uid: email }
-            const allStickers = window.getAllStickers();
-            const myMissing = new Set(allStickers.filter(id => (window.state[id] || 0) === 0));
 
             listEl.innerHTML = '';
-            const entries = Object.entries(friends);
 
-            for (const [fUid, fEmail] of entries) {
-                let fState = {};
-                try {
-                    const fSnap = await get(ref(db, 'users/' + fUid + '/album'));
-                    if (fSnap.exists()) fState = fSnap.val();
-                } catch(e) {}
-
-                const fDups = allStickers.filter(id => (fState[id] || 0) > 1);
-                const matches = fDups.filter(id => myMissing.has(id));
-
+            for (const friend of friendSummaries) {
                 const card = document.createElement('div');
                 card.className = 'friend-card';
                 card.innerHTML = `
                     <div class="friend-info">
-                        <div class="friend-email">${fEmail}</div>
-                        <div class="friend-stats">${fDups.length} repetidas&nbsp;&nbsp;·&nbsp;&nbsp;${Object.keys(fState).filter(k => fState[k] > 0).length} en total</div>
+                        <div class="friend-email">${friend.email}</div>
+                        <div class="friend-stats">${friend.duplicateCount} repetidas&nbsp;&nbsp;-&nbsp;&nbsp;${friend.totalOwned} en total</div>
                     </div>
-                    ${matches.length > 0 ? `<div class="friend-match-badge">${matches.length} canjes</div>` : ''}
+                    ${friend.matchCount > 0 ? `<div class="friend-match-badge">${friend.matchCount} canjes</div>` : ''}
                     <svg class="friend-arrow" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
                 `;
-                card.onclick = () => window.viewFriendTrades(fUid, fEmail, fState);
+                card.onclick = () => window.viewFriendTrades(friend.uid, friend.email, friend.state);
                 listEl.appendChild(card);
             }
         } catch(e) {
             listEl.innerHTML = '<div class="friends-empty"><strong>Error</strong>No se pudieron cargar los amigos. Verifica las reglas de Firebase Database.</div>';
         }
     };
-
     window.viewFriendTrades = function(fUid, fEmail, fState) {
         document.getElementById('friend-trade-title').textContent = fEmail.split('@')[0].toUpperCase();
         window.switchView('view-friend-trades');
 
         const allStickers = window.getAllStickers();
-        const myMissing = allStickers.filter(id => (window.state[id] || 0) === 0);
-        const myDups = allStickers.filter(id => (window.state[id] || 0) > 1);
-        const fMissing = allStickers.filter(id => (fState[id] || 0) === 0);
-        const fDups = allStickers.filter(id => (fState[id] || 0) > 1);
-
-        // What friend has repeated that I need
-        const iCanGet = fDups.filter(id => myMissing.includes(id));
-        // What I have repeated that friend needs
-        const iCanGive = myDups.filter(id => fMissing.includes(id));
+        const { iCanGet, iCanGive } = getFriendTradeMatches(allStickers, window.state, fState);
 
         const content = document.getElementById('friend-trades-content');
 
