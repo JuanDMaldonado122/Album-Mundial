@@ -95,6 +95,17 @@
             Amigos y Canjes
         </button>
 
+        <div class="pro-actions-grid">
+            <button class="btn-secondary btn-flex" onclick="openPackMode()">
+                Agregar Paquete
+            </button>
+            <button class="btn-secondary btn-flex" onclick="openPowerDashboard()">
+                Panel Pro
+            </button>
+        </div>
+
+        <div class="pro-dashboard" id="home-pro-dashboard"></div>
+
         <div class="search-wrapper" style="margin-top: 30px; margin-bottom: 20px;">
             <div class="section-label">Explorar Equipos</div>
             <div class="friends-search-box" style="margin-bottom: 0;">
@@ -105,6 +116,29 @@
         <div class="groups-container" id="group-list">
             <!-- Dynamically populated -->
         </div>
+    </div>
+
+    <!-- PACK MODE VIEW -->
+    <div id="view-pack" class="view">
+        <div class="nav-bar">
+            <button class="btn-back" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <h2 class="nav-title">Paquete Nuevo</h2>
+        </div>
+        <div class="trade-card">
+            <label class="trade-label">Codigos del paquete</label>
+            <textarea id="pack-input" class="pack-input" placeholder="ARG 1&#10;BRA 5&#10;COL 3&#10;FWC 8"></textarea>
+            <button class="btn-primary" onclick="addPackStickers()">Agregar Paquete</button>
+            <div id="pack-result" class="mini-feedback"></div>
+        </div>
+    </div>
+
+    <!-- POWER DASHBOARD VIEW -->
+    <div id="view-power" class="view">
+        <div class="nav-bar">
+            <button class="btn-back" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <h2 class="nav-title">Panel Pro</h2>
+        </div>
+        <div id="power-dashboard-content"></div>
     </div>
 
     <!-- TRADE VIEW -->
@@ -184,6 +218,9 @@
                             PDF Repetidas
                         </button>
                     </div>
+                    <button class="btn-secondary btn-flex" onclick="shareCollectionCard()" style="padding: 18px; font-size: 13px; margin: 0;">
+                        Generar Imagen
+                    </button>
                 </div>
                 
                 <p style="margin-top: 25px; font-size: 12px; color: var(--text-muted); line-height: 1.6;">Genera listas profesionales para compartir con otros coleccionistas.</p>

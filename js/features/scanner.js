@@ -63,6 +63,11 @@ export async function captureAndScan({ video, loader, getAllStickers, updateStic
         }
 
         loader.classList.remove('active');
+
+        if (!confirm(`Detecte ${fullCode}. Agregar esta lamina?`)) {
+            return;
+        }
+
         updateSticker(fullCode, 1);
         setGuideColor('#C8D400', 1000);
 

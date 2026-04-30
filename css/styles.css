@@ -216,6 +216,22 @@
         .trade-input { width: 100%; border: 1px solid var(--border-color); border-radius: 14px; padding: 16px; font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 24px; outline: none; background: rgba(0,0,0,0.5); transition: all 0.2s; font-family: inherit; }
         .trade-input:focus { border-color: var(--neon-purple); box-shadow: 0 0 0 2px rgba(217,70,239,0.2); }
         .trade-icon { display: flex; justify-content: center; color: var(--text-muted); font-size: 32px; font-weight: 900; margin-bottom: 24px; }
+        .pro-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 18px; }
+        .pro-actions-grid .btn-secondary { margin-bottom: 0; padding: 14px 10px; font-size: 12px; }
+        .pro-dashboard { display: grid; gap: 10px; margin: 12px 0 24px; }
+        .insight-card { background: rgba(255,255,255,0.055); border: 1px solid var(--border-color); border-radius: 6px; padding: 14px; }
+        .insight-kicker { color: var(--fifa-lime); font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+        .insight-title { font-weight: 900; font-size: 15px; color: var(--text-main); }
+        .insight-copy { color: var(--text-muted); font-size: 12px; line-height: 1.45; margin-top: 4px; }
+        .pack-input { width: 100%; min-height: 180px; resize: vertical; border: 1px solid var(--border-color); border-radius: 6px; background: rgba(0,0,0,0.45); color: var(--text-main); padding: 16px; font: inherit; font-weight: 700; line-height: 1.6; outline: none; margin-bottom: 14px; }
+        .pack-input:focus { border-color: var(--fifa-lime); box-shadow: 0 0 0 2px rgba(200,212,0,0.12); }
+        .mini-feedback { color: var(--text-muted); font-size: 13px; line-height: 1.5; margin-top: 12px; }
+        .ranking-list, .activity-list { display: grid; gap: 8px; margin-top: 10px; }
+        .ranking-row, .activity-row { display: flex; justify-content: space-between; gap: 12px; align-items: center; background: rgba(0,0,0,0.32); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 12px; font-size: 13px; }
+        .ranking-name, .activity-main { color: var(--text-main); font-weight: 800; overflow-wrap: anywhere; }
+        .ranking-score, .activity-time { color: var(--fifa-lime); font-weight: 900; white-space: nowrap; }
+        .smart-proposal { margin-top: 16px; display: grid; gap: 10px; }
+        .share-preview-card { width: min(100%, 420px); background: #0A0A0A; border: 1px solid var(--border-color); border-radius: 6px; padding: 18px; margin: 14px auto 0; }
         /* === UX IMPROVEMENTS === */
         /* Larger touch targets for iOS */
         button, .team-btn, .sticker, .group-header { min-height: 44px; }

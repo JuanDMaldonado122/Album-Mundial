@@ -1,12 +1,16 @@
 import { albumDatabase } from "./data/albumData.js";
+import { addPackFromText } from "./features/pack.js";
 import { generateStickerPdf } from "./features/pdfExport.js";
 import { captureAndScan, closeScanner, openScanner } from "./features/scanner.js";
+import { createCollectionShareCard } from "./features/shareCard.js";
 import { executeManualTrade, openTradeView } from "./features/trade.js";
+import { addActivity, getActivity } from "./services/activityService.js";
 import { loginUser, logoutUser, persistAuthSession, registerUser, watchAuthState } from "./services/authService.js";
-import { getAlbumStats, getAllStickers, getDuplicateStickerIds } from "./services/albumService.js";
+import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists } from "./services/albumService.js";
 import { auth, db } from "./services/firebaseService.js";
 import { addFriendByEmail, getFriendSummaries, getFriendTradeMatches, registerUserForFriendLookup } from "./services/friendsService.js";
 import { createStickerEl, filterTeams, openSummaryView, openTeamView, renderGroupList, switchSummaryTab, toggleGroup } from "./ui/albumView.js";
+import { renderHomeDashboard, renderPowerDashboard } from "./ui/powerDashboard.js";
 import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
     // 3. Database State
@@ -15,6 +19,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     let stateRef = null;
     let currentUser = null;
     let unsubscribeAlbum = null;
+    let lastFriendSummaries = [];
+    window.smartProposalContext = null;
 
     /* === AUTHENTICATION LOGIC === */
     // Asegurar que la sesión quede guardada permanentemente
@@ -115,6 +121,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         
         // Optimistic local update
         window.state[id] = newVal;
+        addActivity(currentUser.uid, `${delta > 0 ? 'Agregaste' : 'Quitaste'} ${id}`);
         localStorage.setItem(`album-2026-${currentUser.uid}`, JSON.stringify(window.state));
         refreshLocalUI();
 
@@ -141,6 +148,12 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         document.getElementById('stat-dup').innerText = `${stats.duplicates}`;
         document.getElementById('stat-pct').innerText = `${stats.percentage}% Listo`;
         document.getElementById('progress-bar').style.width = `${stats.percentage}%`;
+        renderHomeDashboard({
+            container: document.getElementById('home-pro-dashboard'),
+            albumDatabase: window.DB,
+            state: window.state,
+            activity: getActivity(currentUser?.uid)
+        });
     };
 
     window.shareWsp = function() {
@@ -175,6 +188,50 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             reopenTrade: window.openTrade
         });
     };
+
+    window.openPackMode = function() {
+        document.getElementById('pack-input').value = '';
+        document.getElementById('pack-result').textContent = '';
+        window.switchView('view-pack');
+    };
+
+    window.addPackStickers = function() {
+        if (!currentUser) return;
+
+        const input = document.getElementById('pack-input');
+        const resultEl = document.getElementById('pack-result');
+        const result = addPackFromText({
+            text: input.value,
+            allStickers: window.getAllStickers(),
+            updateSticker: window.updateSticker
+        });
+
+        addActivity(currentUser.uid, `Agregaste paquete de ${result.accepted.length} laminas`);
+        resultEl.textContent = result.message;
+        input.value = '';
+    };
+
+    window.openPowerDashboard = async function() {
+        window.switchView('view-power');
+
+        const container = document.getElementById('power-dashboard-content');
+        container.innerHTML = '<div class="insight-card"><div class="insight-title">Cargando panel...</div></div>';
+
+        try {
+            if (currentUser) {
+                lastFriendSummaries = await getFriendSummaries(currentUser, window.getAllStickers(), window.state);
+            }
+        } catch (e) {}
+
+        renderPowerDashboard({
+            container,
+            albumDatabase: window.DB,
+            state: window.state,
+            activity: getActivity(currentUser?.uid),
+            friendSummaries: lastFriendSummaries
+        });
+    };
+
     window.switchView = function(viewId, pushState = true) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.getElementById(viewId).classList.add('active');
@@ -306,13 +363,27 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         try {
             const allStickers = window.getAllStickers();
             const friendSummaries = await getFriendSummaries(currentUser, allStickers, window.state);
+            lastFriendSummaries = friendSummaries;
 
             if (friendSummaries.length === 0) {
                 listEl.innerHTML = '<div class="friends-empty"><strong>Sin amigos aun</strong>Agrega el correo de un amigo arriba para ver sus laminas repetidas y encontrar canjes.</div>';
                 return;
             }
 
-            listEl.innerHTML = '';
+            const myStats = getAlbumStats(window.state);
+            const ranking = [
+                { email: 'Tu album', totalOwned: myStats.unique },
+                ...friendSummaries
+            ].sort((a, b) => b.totalOwned - a.totalOwned);
+
+            listEl.innerHTML = `
+                <div class="insight-card">
+                    <div class="insight-kicker">Ranking del grupo</div>
+                    <div class="ranking-list">
+                        ${ranking.map((item, index) => `<div class="ranking-row"><span class="ranking-name">${index + 1}. ${item.email}</span><span class="ranking-score">${item.totalOwned}</span></div>`).join('')}
+                    </div>
+                </div>
+            `;
 
             for (const friend of friendSummaries) {
                 const card = document.createElement('div');
@@ -346,11 +417,21 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         if (iCanGet.length === 0 && iCanGive.length === 0) {
             html = '<div class="friends-empty"><strong>Sin canjes posibles</strong>Por ahora no hay laminas que coincidan para intercambiar. Vuelve a revisar mas tarde.</div>';
         } else {
+            const proposalSize = Math.min(iCanGet.length, iCanGive.length, 5);
+            window.smartProposalContext = {
+                friendEmail: fEmail,
+                iCanGet: iCanGet.slice(0, proposalSize),
+                iCanGive: iCanGive.slice(0, proposalSize)
+            };
+
             if (iCanGet.length > 0) {
                 html += `<div class="match-give"><div class="match-section-title">Ellos te pueden dar (${iCanGet.length})</div><div class="match-tags">${iCanGet.map(id => `<div class="match-tag give">${id}</div>`).join('')}</div></div>`;
             }
             if (iCanGive.length > 0) {
                 html += `<div class="match-take"><div class="match-section-title">Tu les puedes dar (${iCanGive.length})</div><div class="match-tags">${iCanGive.map(id => `<div class="match-tag take">${id}</div>`).join('')}</div></div>`;
+            }
+            if (proposalSize > 0) {
+                html += `<div class="smart-proposal"><button class="btn-trade" onclick="sendSmartProposal()">Enviar propuesta inteligente (${proposalSize} x ${proposalSize})</button></div>`;
             }
             // WhatsApp share button
             const msgLines = [];
@@ -363,6 +444,17 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             </button>`;
         }
         content.innerHTML = html;
+    };
+
+    window.sendSmartProposal = function() {
+        const proposal = window.smartProposalContext;
+        if (!proposal || proposal.iCanGet.length === 0 || proposal.iCanGive.length === 0) {
+            alert('No hay una propuesta equilibrada disponible todavia.');
+            return;
+        }
+
+        const msg = `Hola! Te propongo este canje del album Mundial 2026:\n\nYo te doy: ${proposal.iCanGive.join(', ')}\n\nTu me das: ${proposal.iCanGet.join(', ')}\n\nTe sirve?`;
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
     };
 
     /* === SCANNER LOGIC === */
@@ -409,4 +501,20 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const result = generateStickerPdf({ type, allStickers, state: window.state, jsPDF });
 
         if (!result.ok) alert(result.message);
+    };
+
+    window.shareCollectionCard = function() {
+        const allStickers = window.getAllStickers();
+        const stats = getAlbumStats(window.state);
+        const { missing } = getSummaryLists(allStickers, window.state);
+        const duplicates = getDuplicateStickerIds(allStickers, window.state);
+        const dataUrl = createCollectionShareCard({ stats, duplicates, missing });
+        const win = window.open('', '_blank');
+
+        if (!win) {
+            alert('No se pudo abrir la imagen. Revisa el bloqueo de ventanas emergentes.');
+            return;
+        }
+
+        win.document.write(`<title>Mi album Mundial 2026</title><body style="margin:0;background:#0A0A0A;display:grid;place-items:center;min-height:100vh;"><img src="${dataUrl}" style="width:min(100%,480px);height:auto;display:block;"></body>`);
     };
