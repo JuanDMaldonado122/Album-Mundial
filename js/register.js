@@ -1,11 +1,6 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { firebaseConfig } from "./config/firebaseConfig.js";
+import { persistAuthSession, registerUser } from "./services/authService.js";
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-
-    setPersistence(auth, browserLocalPersistence).catch(e => console.error(e));
+    persistAuthSession().catch(e => console.error(e));
 
     window.doRegister = async () => {
         const email = document.getElementById('reg-email').value.trim();
@@ -37,7 +32,7 @@ import { firebaseConfig } from "./config/firebaseConfig.js";
         btn.innerHTML = '<span class="spinner"></span>Creando cuenta...';
 
         try {
-            await createUserWithEmailAndPassword(auth, email, pass);
+            await registerUser(email, pass);
             msg.className = 'success';
             msg.textContent = '✅ ¡Cuenta creada! Redirigiendo al álbum...';
             setTimeout(() => { window.location.href = 'index.html'; }, 1500);

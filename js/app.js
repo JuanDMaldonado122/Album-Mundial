@@ -1,15 +1,9 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getDatabase, ref, onValue, update, get, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { firebaseConfig } from "./config/firebaseConfig.js";
 import { albumDatabase } from "./data/albumData.js";
 import { generateStickerPdf } from "./features/pdfExport.js";
+import { loginUser, logoutUser, persistAuthSession, registerUser, watchAuthState } from "./services/authService.js";
 import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists, getTeamStickers } from "./services/albumService.js";
-
-    // 2. Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const auth = getAuth(app);
+import { auth, db } from "./services/firebaseService.js";
+import { ref, onValue, update, get, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
     // 3. Database State
     window.state = {};
@@ -20,9 +14,9 @@ import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists,
 
     /* === AUTHENTICATION LOGIC === */
     // Asegurar que la sesión quede guardada permanentemente
-    setPersistence(auth, browserLocalPersistence).catch(err => console.error("Persistence Error:", err));
+    persistAuthSession().catch(err => console.error("Persistence Error:", err));
 
-    onAuthStateChanged(auth, (user) => {
+    watchAuthState((user) => {
         if (user) {
             currentUser = user;
             stateRef = ref(db, 'users/' + user.uid + '/album');
@@ -77,7 +71,7 @@ import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists,
         
         if(!email || !pass) return alert("❌ Por favor, llena tu correo y contraseña.");
         
-        signInWithEmailAndPassword(auth, email, pass)
+        loginUser(email, pass)
             .catch(err => {
                 console.error(err);
                 if(err.code === 'auth/invalid-credential') alert("❌ Correo o contraseña incorrectos. Si no tienes cuenta, haz clic en Crear Cuenta.");
@@ -94,7 +88,7 @@ import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists,
         if(!email || !pass) return alert("❌ Por favor, llena tu correo y contraseña.");
         if(pass.length < 6) return alert("❌ La contraseña debe tener al menos 6 caracteres.");
 
-        createUserWithEmailAndPassword(auth, email, pass)
+        registerUser(email, pass)
             .catch(err => {
                 console.error(err);
                 if(err.code === 'auth/email-already-in-use') alert("❌ Este correo ya tiene una cuenta. Haz clic en 'Entrar al Álbum'.");
@@ -105,7 +99,7 @@ import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists,
 
     window.handleLogout = () => {
         if(confirm("¿Seguro que quieres cerrar sesión de tu álbum familiar?")) {
-            signOut(auth);
+            logoutUser();
         }
     };
 
