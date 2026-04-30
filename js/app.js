@@ -3,9 +3,10 @@ import { generateStickerPdf } from "./features/pdfExport.js";
 import { captureAndScan, closeScanner, openScanner } from "./features/scanner.js";
 import { executeManualTrade, openTradeView } from "./features/trade.js";
 import { loginUser, logoutUser, persistAuthSession, registerUser, watchAuthState } from "./services/authService.js";
-import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists, getTeamStickers } from "./services/albumService.js";
+import { getAlbumStats, getAllStickers, getDuplicateStickerIds } from "./services/albumService.js";
 import { auth, db } from "./services/firebaseService.js";
 import { addFriendByEmail, getFriendSummaries, getFriendTradeMatches, registerUserForFriendLookup } from "./services/friendsService.js";
+import { createStickerEl, filterTeams, openSummaryView, openTeamView, renderGroupList, switchSummaryTab, toggleGroup } from "./ui/albumView.js";
 import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
     // 3. Database State
@@ -204,152 +205,48 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     };
 
     window.toggleGroup = function(groupId) {
-        document.querySelectorAll('.group-card').forEach(card => {
-            if(card.id === groupId) card.classList.toggle('open'); 
-            else card.classList.remove('open');
-        });
+        toggleGroup(groupId);
     };
 
     window.filterTeams = function() {
-        const query = document.getElementById('team-search').value.toLowerCase().trim();
-        const cards = document.querySelectorAll('.group-card');
-        
-        cards.forEach(card => {
-            const text = card.innerText.toLowerCase();
-            if (text.includes(query)) {
-                card.style.display = 'block';
-                // Si la búsqueda es muy específica, abrir el grupo automáticamente
-                if (query.length > 2 && text.includes(query)) {
-                    // Solo si no estamos buscando algo muy genérico como "grupo"
-                    if (!"grupo".includes(query)) card.classList.add('open');
-                }
-            } else {
-                card.style.display = 'none';
-                card.classList.remove('open');
-            }
-        });
-        
-        // Si no hay búsqueda, cerrar todo
-        if (!query) {
-            cards.forEach(c => {
-                c.style.display = 'block';
-                c.classList.remove('open');
-            });
-        }
+        filterTeams();
     };
 
     window.openTeam = function(teamCode, teamName, isSpecial = false) {
         window.currentTeamContext = {code: teamCode, name: teamName, isSpecial};
-        
-        document.getElementById('team-title').innerText = teamName;
-        let stickers = getTeamStickers(window.DB, teamCode, isSpecial);
-        const grid = document.getElementById('sticker-grid');
-        grid.innerHTML = '';
-        stickers.forEach(id => grid.appendChild(window.createStickerEl(id)));
-        window.switchView('view-team');
+
+        openTeamView({
+            albumDatabase: window.DB,
+            teamCode,
+            teamName,
+            isSpecial,
+            state: window.state,
+            updateSticker: window.updateSticker,
+            switchView: window.switchView
+        });
     };
 
     window.openSummary = function() {
-        const { missing: m, got: g, duplicates: d } = getSummaryLists(window.getAllStickers(), window.state);
-
-        document.getElementById('count-missing').innerText = m.length;
-        document.getElementById('count-got').innerText = g.length;
-        document.getElementById('count-dup').innerText = d.length;
-
-        const populate = (elId, arr, cssClass) => {
-            const el = document.getElementById(elId);
-            if (arr.length === 0) el.innerHTML = `<div class="empty-state">No hay láminas en esta lista.</div>`;
-            else el.innerHTML = arr.map(i => `<div class="code-tag ${cssClass}">${i}</div>`).join('');
-        };
-
-        populate('content-missing', m, ''); populate('content-got', g, 'got'); populate('content-dup', d, 'dup');
-        window.switchView('view-summary');
+        openSummaryView({
+            allStickers: window.getAllStickers(),
+            state: window.state,
+            switchView: window.switchView
+        });
     };
 
     window.switchTab = function(tabId) {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.summary-content').forEach(c => c.classList.remove('active'));
-        document.getElementById(`tab-${tabId}`).classList.add('active');
-        document.getElementById(`content-${tabId}`).classList.add('active');
+        switchSummaryTab(tabId);
     };
 
     window.createStickerEl = function(id) {
-        const el = document.createElement('div');
-        el.className = 'sticker';
-        const count = window.state[id] || 0;
-        
-        if (count == 1) el.classList.add('status-1');
-        else if (count > 1) el.classList.add('status-2');
-        
-        const codeSpan = document.createElement('div');
-        codeSpan.className = 'sticker-code';
-        const parts = id.split(' ');
-        if(parts.length > 1) codeSpan.innerHTML = `${parts[0]}<br>${parts[1]}`;
-        else codeSpan.innerText = id;
-        el.appendChild(codeSpan);
-        
-        if (count > 1) {
-            const badge = document.createElement('div');
-            badge.className = 'badge-count';
-            badge.innerText = `+${count - 1}`;
-            el.appendChild(badge);
-        }
-        if (count > 0) {
-            const minusBtn = document.createElement('div');
-            minusBtn.className = 'btn-minus';
-            minusBtn.innerHTML = '&minus;';
-            minusBtn.onclick = (e) => {
-                e.stopPropagation(); window.updateSticker(id, -1);
-            };
-            el.appendChild(minusBtn);
-        }
-        
-        el.onclick = () => { window.updateSticker(id, 1); };
-        return el;
-    }
-
+        return createStickerEl(id, window.state, window.updateSticker);
+    };
     // BOOTSTRAP INITIALIZATION
     window.onload = () => {
         // Init SW 
         if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(e=>{});
 
-        const list = document.getElementById('group-list');
-        
-        const espCard = document.createElement('div');
-        espCard.className = 'group-card';
-        espCard.id = 'group-especiales';
-        espCard.innerHTML = `<div class="group-header" onclick="openTeam('FWC', 'Sección Especial', true)">
-            <div class="group-meta">
-                <div>🌟 Sección Especial</div>
-                <div class="group-acronyms">Lámina 00, FWC 1 - FWC 19</div>
-            </div>
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(-90deg);"><path d="M6 9l6 6 6-6"/></svg>
-        </div>`;
-        list.appendChild(espCard);
-
-        window.DB.groups.forEach((g, idx) => {
-            const card = document.createElement('div');
-            card.className = 'group-card';
-            const cardId = `group-${idx}`;
-            card.id = cardId; 
-            const acronyms = g.teams.map(t => t.code).join(', '); 
-            
-            card.innerHTML = `
-                <div class="group-header" onclick="toggleGroup('${cardId}')">
-                    <div class="group-meta">
-                        <div>${g.name}</div>
-                        <div class="group-acronyms">${acronyms}</div>
-                    </div>
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-                </div>
-                <div class="group-content">
-                    <div class="teams-grid">
-                        ${g.teams.map(t => `<button class="team-btn" onclick="openTeam('${t.code}', '${t.name}')"><span class="team-code">${t.code}</span><span>${t.name}</span></button>`).join('')}
-                    </div>
-                </div>
-            `;
-            list.appendChild(card);
-        });
+        renderGroupList(window.DB);
         
         // Wait for onAuthStateChanged to show a view
 
