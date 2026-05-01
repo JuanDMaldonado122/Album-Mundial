@@ -12,6 +12,8 @@ Usa esta lista antes de subir cambios grandes o antes de mezclar a `master`.
 ## Autenticacion
 
 - Crear una cuenta nueva desde `register.html`.
+- Confirmar que despues del primer ingreso aparece la pantalla para elegir apodo publico.
+- Guardar un apodo y verificar que la home saluda con ese nombre.
 - Entrar con una cuenta existente.
 - Verificar que cerrar sesion vuelve a la pantalla de login.
 - Intentar entrar con clave incorrecta y confirmar que aparece un mensaje claro.

@@ -14,6 +14,19 @@ export function registerUserForFriendLookup(user) {
     ]);
 }
 
+export async function getUserProfile(uid) {
+    const snap = await get(ref(db, `profiles/${uid}`));
+    return snap.exists() ? snap.val() : {};
+}
+
+export function saveUserProfile(user, profile) {
+    return set(ref(db, `profiles/${user.uid}`), {
+        email: user.email,
+        displayName: profile.displayName.trim(),
+        updatedAt: Date.now()
+    });
+}
+
 export async function addFriendByEmail(currentUser, email) {
     const normalizedEmail = email.trim().toLowerCase();
     const emailKey = toEmailKey(normalizedEmail);

@@ -9,7 +9,7 @@ import { loginUser, logoutUser, persistAuthSession, registerUser, watchAuthState
 import { createTradeRequest, getUserTradeRequests, respondTradeRequest, sendChatMessage, watchChatMessages } from "./services/chatService.js";
 import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists } from "./services/albumService.js";
 import { auth, db } from "./services/firebaseService.js";
-import { addFriendByEmail, addFriendToGroup, createFriendGroup, getFriendGroups, getFriendSummaries, getFriendTradeMatches, registerUserForFriendLookup } from "./services/friendsService.js";
+import { addFriendByEmail, addFriendToGroup, createFriendGroup, getFriendGroups, getFriendSummaries, getFriendTradeMatches, getUserProfile, registerUserForFriendLookup, saveUserProfile } from "./services/friendsService.js";
 import { calculateDistanceKm, disableNearbyAvailability, getNearbyCollectors, saveNearbyAvailability } from "./services/nearbyService.js";
 import { addNotification, clearNotifications, formatNotificationTime, getNotifications, getUnreadNotificationCount, markAllNotificationsRead, markMilestoneNotified, wasMilestoneNotified } from "./services/notificationService.js";
 import { createStickerEl, filterTeams, openSummaryView, openTeamView, renderGroupList, switchSummaryTab, toggleGroup } from "./ui/albumView.js";
@@ -20,6 +20,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     window.currentTeamContext = null; 
     let stateRef = null;
     let currentUser = null;
+    let currentProfile = {};
     let unsubscribeAlbum = null;
     let friendGroups = [];
     let activeFriendGroupId = 'all';
@@ -36,7 +37,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     // Asegurar que la sesión quede guardada permanentemente
     persistAuthSession().catch(err => console.error("Persistence Error:", err));
 
-    watchAuthState((user) => {
+    watchAuthState(async (user) => {
         if (user) {
             currentUser = user;
             stateRef = ref(db, 'users/' + user.uid + '/album');
@@ -46,6 +47,11 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             
             // Register email in index for friend lookup
             registerUserForFriendLookup(user).catch(() => {});
+            try {
+                currentProfile = await getUserProfile(user.uid);
+            } catch (e) {
+                currentProfile = {};
+            }
             
             // Try loading local state first for speed
             const local = localStorage.getItem(`album-2026-${user.uid}`);
@@ -69,11 +75,16 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 }
             });
 
-            window.goHome(); // Show app
+            if (!currentProfile.displayName) {
+                window.switchView('view-profile-setup', false);
+            } else {
+                window.goHome(); // Show app
+            }
         } else {
             // User is signed out
             if (unsubscribeAlbum) { unsubscribeAlbum(); unsubscribeAlbum = null; }
             currentUser = null;
+            currentProfile = {};
             stateRef = null;
             window.state = {};
             document.getElementById('fab-scan').style.display = 'none';
@@ -118,6 +129,38 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     window.handleLogout = () => {
         if(confirm("¿Seguro que quieres cerrar sesión de tu álbum familiar?")) {
             logoutUser();
+        }
+    };
+
+    window.saveDisplayName = async function() {
+        const input = document.getElementById('display-name-input');
+        const status = document.getElementById('profile-setup-status');
+        const displayName = (input?.value || '').trim();
+
+        if (!displayName || !currentUser) {
+            status.textContent = 'Escribe un nombre o apodo para continuar.';
+            return;
+        }
+
+        if (displayName.length < 2) {
+            status.textContent = 'El nombre debe tener al menos 2 caracteres.';
+            return;
+        }
+
+        status.textContent = 'Guardando...';
+
+        try {
+            await saveUserProfile(currentUser, { displayName });
+            currentProfile = { ...currentProfile, displayName, email: currentUser.email };
+            pushNotification({
+                title: `Bienvenido, ${displayName}`,
+                message: 'Tu perfil quedó listo para rankings, canjes y solicitudes.',
+                type: 'profile',
+                action: 'summary'
+            });
+            window.goHome();
+        } catch (e) {
+            status.textContent = 'No se pudo guardar el nombre. Revisa Firebase.';
         }
     };
 
@@ -284,6 +327,12 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
     window.goHome = function() { 
         if(!currentUser) return window.switchView('view-auth', false);
+        const greeting = document.getElementById('home-greeting');
+        if (greeting) {
+            greeting.innerHTML = currentProfile.displayName
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.0</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.0</span>';
+        }
         window.switchView('view-home', false);
         history.replaceState({ view: 'view-home' }, '', '#home');
         window.updateStats(); 
@@ -570,6 +619,9 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         document.getElementById('chat-input')?.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') window.sendCurrentChatMessage();
         });
+        document.getElementById('display-name-input')?.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') window.saveDisplayName();
+        });
 
         document.addEventListener('click', (event) => {
             const tabButton = event.target.closest('[data-tab]');
@@ -611,6 +663,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'open-whatsapp': (button) => window.open(button.dataset.url, '_blank'),
                 'mark-notifications-read': window.markNotificationsRead,
                 'reject-trade-request': (button) => window.respondToTradeRequest(button.dataset.requestId, 'rejected'),
+                'save-display-name': window.saveDisplayName,
                 'send-chat-message': window.sendCurrentChatMessage,
                 'send-nearby-request': (button) => window.sendNearbyTradeRequest(button.dataset.uid),
                 'send-trade-request': window.sendInternalTradeRequest,

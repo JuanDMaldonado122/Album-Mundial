@@ -87,6 +87,7 @@
             object-fit: cover;
             border: 2px solid var(--border-color);
         }
+        .profile-setup-card { margin-top: 26px; }
 
         /* Stats Dashboard */
         .stats-dashboard { 

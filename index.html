@@ -44,11 +44,26 @@
         </div>
     </div>
 
+    <!-- PROFILE SETUP VIEW -->
+    <div id="view-profile-setup" class="view">
+        <header>
+            <h1>Tu nombre</h1>
+            <p class="subtitle">Hazlo tuyo</p>
+        </header>
+        <div class="auth-card profile-setup-card">
+            <h2 style="margin-top:0; font-size:20px; margin-bottom:8px; font-family:'Bebas Neue',sans-serif; letter-spacing:2px; font-weight:400;">¿Cómo quieres que te llamemos?</h2>
+            <p style="color:var(--text-muted); font-size:13px; margin-bottom:22px; line-height:1.5;">Este nombre aparecerá en saludos, rankings y canjes cerca. Puedes usar tu nombre, un apodo o el nombre de tu familia.</p>
+            <input type="text" id="display-name-input" class="auth-input" placeholder="Ej: Familia Torres" autocomplete="nickname" maxlength="32">
+            <button class="btn-primary" data-action="save-display-name">Guardar Nombre</button>
+            <div id="profile-setup-status" class="mini-feedback"></div>
+        </div>
+    </div>
+
     <!-- HOME VIEW -->
     <div id="view-home" class="view">
         <header>
             <h1>Álbum 26</h1>
-            <p class="subtitle">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.0</span></p>
+            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.0</span></p>
         </header>
 
         <div class="stats-dashboard">
