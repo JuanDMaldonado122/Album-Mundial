@@ -8,7 +8,7 @@ import { addActivity, getActivity } from "./services/activityService.js";
 import { loginUser, logoutUser, persistAuthSession, registerUser, watchAuthState } from "./services/authService.js";
 import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists } from "./services/albumService.js";
 import { auth, db } from "./services/firebaseService.js";
-import { addFriendByEmail, getFriendSummaries, getFriendTradeMatches, registerUserForFriendLookup } from "./services/friendsService.js";
+import { addFriendByEmail, addFriendToGroup, createFriendGroup, getFriendGroups, getFriendSummaries, getFriendTradeMatches, registerUserForFriendLookup } from "./services/friendsService.js";
 import { createStickerEl, filterTeams, openSummaryView, openTeamView, renderGroupList, switchSummaryTab, toggleGroup } from "./ui/albumView.js";
 import { renderHomeDashboard, renderPowerDashboard } from "./ui/powerDashboard.js";
 import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
@@ -20,6 +20,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     let currentUser = null;
     let unsubscribeAlbum = null;
     let lastFriendSummaries = [];
+    let friendGroups = [];
+    let activeFriendGroupId = 'all';
     window.smartProposalContext = null;
 
     /* === AUTHENTICATION LOGIC === */
@@ -313,6 +315,9 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         document.getElementById('friend-email-input')?.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') window.addFriend();
         });
+        document.getElementById('friend-group-name-input')?.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') window.createFriendGroupFromInput();
+        });
 
         document.addEventListener('click', (event) => {
             const tabButton = event.target.closest('[data-tab]');
@@ -335,6 +340,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'add-pack': window.addPackStickers,
                 'capture-scan': window.captureAndScan,
                 'close-scanner': window.closeScanner,
+                'create-friend-group': window.createFriendGroupFromInput,
                 'execute-trade': window.executeTrade,
                 'go-home': window.goHome,
                 'go-register': () => { window.location.href = 'register.html'; },
@@ -351,6 +357,10 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'share-card': window.shareCollectionCard,
                 'share-repeated': window.shareRepeated,
                 'smart-proposal': window.sendSmartProposal,
+                'switch-friend-group': (button) => {
+                    activeFriendGroupId = button.dataset.groupId || 'all';
+                    window.renderFriends();
+                },
                 'toggle-help': (button) => {
                     const help = document.getElementById(button.dataset.helpTarget);
                     if (help) help.hidden = !help.hidden;
@@ -385,10 +395,65 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         window.renderFriends();
     };
 
+    function renderFriendGroupControls() {
+        const tabsEl = document.getElementById('friend-group-tabs');
+        const selectEl = document.getElementById('friend-group-select');
+        if (!tabsEl || !selectEl) return;
+
+        const groups = [{ id: 'all', name: 'Todos' }, ...friendGroups];
+
+        tabsEl.innerHTML = groups.map(group => `
+            <button class="friend-group-tab ${group.id === activeFriendGroupId ? 'active' : ''}" data-action="switch-friend-group" data-group-id="${group.id}">
+                ${group.name}
+            </button>
+        `).join('');
+
+        selectEl.innerHTML = groups.map(group => `
+            <option value="${group.id}" ${group.id === activeFriendGroupId ? 'selected' : ''}>${group.name}</option>
+        `).join('');
+    }
+
+    function getActiveFriendSummaries(friendSummaries) {
+        if (activeFriendGroupId === 'all') return friendSummaries;
+
+        const group = friendGroups.find(item => item.id === activeFriendGroupId);
+        if (!group) return friendSummaries;
+
+        const memberIds = new Set(Object.keys(group.members || {}));
+        return friendSummaries.filter(friend => memberIds.has(friend.uid));
+    }
+
+    window.createFriendGroupFromInput = async function() {
+        const input = document.getElementById('friend-group-name-input');
+        const status = document.getElementById('friends-status');
+        const name = (input?.value || '').trim();
+
+        if (!name || !currentUser) return;
+
+        status.className = '';
+        status.textContent = 'Creando grupo...';
+
+        try {
+            const group = await createFriendGroup(currentUser, name);
+            friendGroups.push(group);
+            activeFriendGroupId = group.id;
+            input.value = '';
+            status.className = 'ok';
+            status.textContent = `Grupo ${group.name} creado.`;
+            window.renderFriends();
+            setTimeout(() => { status.textContent = ''; status.className = ''; }, 3000);
+        } catch (e) {
+            status.className = 'err';
+            status.textContent = 'No se pudo crear el grupo. Revisa Firebase.';
+        }
+    };
+
     window.addFriend = async function() {
         const input = document.getElementById('friend-email-input');
         const status = document.getElementById('friends-status');
+        const groupSelect = document.getElementById('friend-group-select');
         const email = (input.value || '').trim().toLowerCase();
+        const selectedGroupId = groupSelect?.value || activeFriendGroupId;
         if (!email) return;
         if (!currentUser) return;
 
@@ -411,8 +476,10 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             }
 
             input.value = '';
+            await addFriendToGroup(currentUser, selectedGroupId, result.friendUid, result.email);
+            activeFriendGroupId = selectedGroupId;
             status.className = 'ok';
-            status.textContent = 'Amigo agregado correctamente.';
+            status.textContent = selectedGroupId === 'all' ? 'Amigo agregado correctamente.' : 'Amigo agregado al grupo.';
             window.renderFriends();
             setTimeout(() => { status.textContent = ''; status.className = ''; }, 3000);
         } catch(e) {
@@ -428,30 +495,45 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
         try {
             const allStickers = window.getAllStickers();
+            friendGroups = await getFriendGroups(currentUser);
+            if (activeFriendGroupId !== 'all' && !friendGroups.some(group => group.id === activeFriendGroupId)) {
+                activeFriendGroupId = 'all';
+            }
+            renderFriendGroupControls();
+
             const friendSummaries = await getFriendSummaries(currentUser, allStickers, window.state);
             lastFriendSummaries = friendSummaries;
+            const visibleFriendSummaries = getActiveFriendSummaries(friendSummaries);
+            const activeGroupName = activeFriendGroupId === 'all'
+                ? 'Todos'
+                : friendGroups.find(group => group.id === activeFriendGroupId)?.name || 'Grupo';
 
             if (friendSummaries.length === 0) {
-                listEl.innerHTML = '<div class="friends-empty"><strong>Sin amigos aún</strong>Agrega el correo de un amigo arriba para ver sus láminas repetidas y encontrar canjes.</div>';
+                listEl.innerHTML = '<div class="friends-empty"><strong>Sin amigos aún</strong>Crea un grupo y agrega correos para ver progreso, repetidas y canjes.</div>';
+                return;
+            }
+
+            if (visibleFriendSummaries.length === 0) {
+                listEl.innerHTML = `<div class="friends-empty"><strong>${activeGroupName}</strong>Este grupo todavía no tiene amigos. Elige el grupo arriba y agrega un correo.</div>`;
                 return;
             }
 
             const myStats = getAlbumStats(window.state);
             const ranking = [
                 { email: 'Tu álbum', totalOwned: myStats.unique },
-                ...friendSummaries
+                ...visibleFriendSummaries
             ].sort((a, b) => b.totalOwned - a.totalOwned);
 
             listEl.innerHTML = `
                 <div class="insight-card">
-                    <div class="insight-kicker">Ranking del grupo</div>
+                    <div class="insight-kicker">Ranking: ${activeGroupName}</div>
                     <div class="ranking-list">
                         ${ranking.map((item, index) => `<div class="ranking-row"><span class="ranking-name">${index + 1}. ${item.email}</span><span class="ranking-score">${item.totalOwned}</span></div>`).join('')}
                     </div>
                 </div>
             `;
 
-            for (const friend of friendSummaries) {
+            for (const friend of visibleFriendSummaries) {
                 const card = document.createElement('div');
                 card.className = 'friend-card';
                 card.innerHTML = `

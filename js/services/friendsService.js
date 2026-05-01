@@ -31,7 +31,46 @@ export async function addFriendByEmail(currentUser, email) {
 
     await set(ref(db, `users/${currentUser.uid}/friends/${friendUid}`), normalizedEmail);
 
-    return { ok: true, friendUid };
+    return { ok: true, friendUid, email: normalizedEmail };
+}
+
+export async function createFriendGroup(currentUser, name) {
+    const cleanName = name.trim();
+    const groupId = cleanName
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 32) || 'grupo';
+    const uniqueId = `${groupId}-${Date.now()}`;
+
+    await set(ref(db, `users/${currentUser.uid}/friendGroups/${uniqueId}`), {
+        name: cleanName,
+        createdAt: Date.now(),
+        members: {}
+    });
+
+    return { id: uniqueId, name: cleanName, members: {} };
+}
+
+export async function getFriendGroups(currentUser) {
+    const snap = await get(ref(db, `users/${currentUser.uid}/friendGroups`));
+
+    if (!snap.exists()) return [];
+
+    return Object.entries(snap.val()).map(([id, group]) => ({
+        id,
+        name: group.name || 'Grupo',
+        members: group.members || {},
+        createdAt: group.createdAt || 0
+    })).sort((a, b) => a.createdAt - b.createdAt);
+}
+
+export function addFriendToGroup(currentUser, groupId, friendUid, email) {
+    if (!groupId || groupId === 'all') return Promise.resolve();
+
+    return set(ref(db, `users/${currentUser.uid}/friendGroups/${groupId}/members/${friendUid}`), email);
 }
 
 export async function getFriendSummaries(currentUser, allStickers, myState) {

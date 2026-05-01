@@ -58,6 +58,10 @@ FWC 8
 - Con dos cuentas, agregar el correo de la otra cuenta como amigo.
 - Confirmar que aparece en la lista.
 - Confirmar que el ranking muestra ambos usuarios.
+- Crear un grupo llamado `Familia`.
+- Elegir `Familia` en el selector y agregar un correo.
+- Confirmar que la pestana `Familia` muestra solo los miembros de ese grupo.
+- Crear otro grupo llamado `Amigos` y confirmar que cada grupo mantiene su propio ranking.
 - Crear una repetida en una cuenta y una faltante en la otra.
 - Abrir los canjes del amigo y verificar la sugerencia.
 - Probar `Enviar propuesta inteligente` y confirmar que abre WhatsApp con el mensaje.

@@ -401,6 +401,60 @@
             color: var(--text-muted);
             line-height: 1.5;
         }
+        .group-create-box {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .group-create-box input, .friend-group-picker select {
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 14px 16px;
+            border-radius: 6px;
+            font-size: 15px;
+            outline: none;
+            font-family: 'Noto Sans', sans-serif;
+        }
+        .friend-group-tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+        .friend-group-tab {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            border-radius: 999px;
+            padding: 9px 13px;
+            font-size: 12px;
+            font-weight: 900;
+            white-space: nowrap;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        .friend-group-tab.active {
+            background: var(--fifa-lime);
+            border-color: var(--fifa-lime);
+            color: #0A0A0A;
+        }
+        .friend-group-picker {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .friend-group-picker label {
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
         .friends-empty {
             text-align: center;
             padding: 40px 20px;

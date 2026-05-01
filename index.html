@@ -249,7 +249,16 @@
             <h2 class="nav-title">Amigos y Canjes</h2>
         </div>
         <div class="friend-msg-box">
-            Agrega amigos con su correo para ver qué láminas tienen repetidas y encontrar los mejores canjes automáticamente.
+            Crea grupos como Familia o Amigos, agrega correos y compara progreso, repetidas y canjes posibles.
+        </div>
+        <div class="group-create-box">
+            <input type="text" id="friend-group-name-input" placeholder="Nombre del grupo (Ej: Familia)" autocomplete="off">
+            <button class="btn-add-friend" data-action="create-friend-group">Crear Grupo</button>
+        </div>
+        <div class="friend-group-tabs" id="friend-group-tabs"></div>
+        <div class="friend-group-picker">
+            <label for="friend-group-select">Agregar amigo a</label>
+            <select id="friend-group-select"></select>
         </div>
         <div class="friends-search-box">
             <input type="email" id="friend-email-input" placeholder="correo@amigo.com" autocomplete="off">
