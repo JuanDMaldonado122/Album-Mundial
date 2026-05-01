@@ -273,6 +273,7 @@
             <button class="btn-add-friend" data-action="add-friend">Agregar</button>
         </div>
         <div id="friends-status"></div>
+        <div id="trade-requests-list"></div>
         <div id="friends-list"></div>
     </div>
 
@@ -283,6 +284,20 @@
             <h2 class="nav-title" id="friend-trade-title">Canjes</h2>
         </div>
         <div id="friend-trades-content"></div>
+    </div>
+
+    <!-- CHAT VIEW -->
+    <div id="view-chat" class="view">
+        <div class="nav-bar">
+            <button class="btn-back" data-action="open-friends"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <h2 class="nav-title" id="chat-title">Chat</h2>
+        </div>
+        <div class="friend-msg-box" id="chat-context"></div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-compose">
+            <input type="text" id="chat-input" placeholder="Escribe un mensaje..." autocomplete="off">
+            <button class="btn-add-friend" data-action="send-chat-message">Enviar</button>
+        </div>
     </div>
 
     <!-- SCANNER VIEW -->

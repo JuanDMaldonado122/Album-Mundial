@@ -18,6 +18,18 @@
         ".read": "auth != null",
         ".write": "auth != null && auth.uid == $uid"
       }
+    },
+    "tradeRequests": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "userTradeRequests": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "chats": {
+      ".read": "auth != null",
+      ".write": "auth != null"
     }
   }
 }

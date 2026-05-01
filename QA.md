@@ -73,6 +73,9 @@ FWC 8
 - Crear otro grupo llamado `Amigos` y confirmar que cada grupo mantiene su propio ranking.
 - Crear una repetida en una cuenta y una faltante en la otra.
 - Abrir los canjes del amigo y verificar la sugerencia.
+- Enviar una solicitud interna de canje.
+- Entrar con la otra cuenta y aceptar la solicitud.
+- Abrir el chat interno y enviar mensajes desde ambas cuentas.
 - Probar `Enviar propuesta inteligente` y confirmar que abre WhatsApp con el mensaje.
 
 ## Compartir y exportar

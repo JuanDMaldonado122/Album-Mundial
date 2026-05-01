@@ -6,6 +6,7 @@ import { createCollectionShareCard } from "./features/shareCard.js";
 import { executeManualTrade, openTradeView } from "./features/trade.js";
 import { addActivity } from "./services/activityService.js";
 import { loginUser, logoutUser, persistAuthSession, registerUser, watchAuthState } from "./services/authService.js";
+import { createTradeRequest, getUserTradeRequests, respondTradeRequest, sendChatMessage, watchChatMessages } from "./services/chatService.js";
 import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists } from "./services/albumService.js";
 import { auth, db } from "./services/firebaseService.js";
 import { addFriendByEmail, addFriendToGroup, createFriendGroup, getFriendGroups, getFriendSummaries, getFriendTradeMatches, registerUserForFriendLookup } from "./services/friendsService.js";
@@ -21,6 +22,9 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     let unsubscribeAlbum = null;
     let friendGroups = [];
     let activeFriendGroupId = 'all';
+    let tradeRequestsById = {};
+    let currentChat = null;
+    let unsubscribeChat = null;
     window.smartProposalContext = null;
 
     /* === AUTHENTICATION LOGIC === */
@@ -419,6 +423,9 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         document.getElementById('friend-group-name-input')?.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') window.createFriendGroupFromInput();
         });
+        document.getElementById('chat-input')?.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') window.sendCurrentChatMessage();
+        });
 
         document.addEventListener('click', (event) => {
             const tabButton = event.target.closest('[data-tab]');
@@ -439,6 +446,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             const actions = {
                 'add-friend': window.addFriend,
                 'add-pack': window.addPackStickers,
+                'accept-trade-request': (button) => window.respondToTradeRequest(button.dataset.requestId, 'accepted'),
                 'capture-scan': window.captureAndScan,
                 'close-scanner': window.closeScanner,
                 'create-friend-group': window.createFriendGroupFromInput,
@@ -447,6 +455,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'go-register': () => { window.location.href = 'register.html'; },
                 'logout': window.handleLogout,
                 'open-friends': window.openFriends,
+                'open-chat': (button) => window.openTradeChat(button.dataset.requestId),
                 'open-pack': window.openPackMode,
                 'open-scanner': window.openScanner,
                 'open-share': () => window.switchView('view-share'),
@@ -456,6 +465,9 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'open-trade': window.openTrade,
                 'open-whatsapp': (button) => window.open(button.dataset.url, '_blank'),
                 'mark-notifications-read': window.markNotificationsRead,
+                'reject-trade-request': (button) => window.respondToTradeRequest(button.dataset.requestId, 'rejected'),
+                'send-chat-message': window.sendCurrentChatMessage,
+                'send-trade-request': window.sendInternalTradeRequest,
                 'share-card': window.shareCollectionCard,
                 'share-repeated': window.shareRepeated,
                 'smart-proposal': window.sendSmartProposal,
@@ -524,6 +536,59 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
         const memberIds = new Set(Object.keys(group.members || {}));
         return friendSummaries.filter(friend => memberIds.has(friend.uid));
+    }
+
+    function getRequestSummary(request) {
+        const give = request.proposal?.iCanGive?.length || 0;
+        const get = request.proposal?.iCanGet?.length || 0;
+        return `${Math.min(give, get)} canjes posibles: tu das ${give} y recibes ${get}.`;
+    }
+
+    function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, char => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        })[char]);
+    }
+
+    function renderTradeRequests(requests) {
+        const container = document.getElementById('trade-requests-list');
+        if (!container || !currentUser) return;
+
+        const relevant = requests.filter(request => request.status !== 'rejected').slice(0, 5);
+
+        if (relevant.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="insight-card">
+                <div class="insight-kicker">Solicitudes de canje</div>
+                ${relevant.map(request => {
+                    const incoming = request.toUid === currentUser.uid;
+                    const otherEmail = incoming ? request.fromEmail : request.toEmail;
+                    const title = incoming ? `${otherEmail} quiere canjear` : `Solicitud para ${otherEmail}`;
+                    const status = request.status === 'accepted' ? 'Aceptada' : 'Pendiente';
+                    const actions = request.status === 'accepted'
+                        ? `<button class="btn-trade" data-action="open-chat" data-request-id="${request.id}">Abrir chat</button>`
+                        : incoming
+                            ? `<button class="btn-trade" data-action="accept-trade-request" data-request-id="${request.id}">Aceptar</button><button class="btn-secondary" data-action="reject-trade-request" data-request-id="${request.id}">Rechazar</button>`
+                            : `<button class="btn-secondary" data-action="open-chat" data-request-id="${request.id}">Ver solicitud</button>`;
+
+                    return `
+                        <div class="request-card ${request.status}">
+                            <div class="request-title">${escapeHtml(title)}</div>
+                            <div class="request-copy">${escapeHtml(status)}. ${escapeHtml(getRequestSummary(request))}</div>
+                            <div class="request-actions">${actions}</div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
     }
 
     window.createFriendGroupFromInput = async function() {
@@ -617,6 +682,9 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 activeFriendGroupId = 'all';
             }
             renderFriendGroupControls();
+            const tradeRequests = await getUserTradeRequests(currentUser);
+            tradeRequestsById = Object.fromEntries(tradeRequests.map(request => [request.id, request]));
+            renderTradeRequests(tradeRequests);
 
             const friendSummaries = await getFriendSummaries(currentUser, allStickers, window.state);
             const visibleFriendSummaries = getActiveFriendSummaries(friendSummaries);
@@ -683,6 +751,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         } else {
             const proposalSize = Math.min(iCanGet.length, iCanGive.length, 5);
             window.smartProposalContext = {
+                friendUid: fUid,
                 friendEmail: fEmail,
                 iCanGet: iCanGet.slice(0, proposalSize),
                 iCanGive: iCanGive.slice(0, proposalSize)
@@ -695,7 +764,10 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 html += `<div class="match-take"><div class="match-section-title">Tu les puedes dar (${iCanGive.length})</div><div class="match-tags">${iCanGive.map(id => `<div class="match-tag take">${id}</div>`).join('')}</div></div>`;
             }
             if (proposalSize > 0) {
-                html += `<div class="smart-proposal"><button class="btn-trade" data-action="smart-proposal">Enviar propuesta inteligente (${proposalSize} x ${proposalSize})</button></div>`;
+                html += `<div class="smart-proposal">
+                    <button class="btn-trade" data-action="send-trade-request">Enviar solicitud interna (${proposalSize} x ${proposalSize})</button>
+                    <button class="btn-secondary" data-action="smart-proposal">Enviar por WhatsApp</button>
+                </div>`;
             }
             // WhatsApp share button
             const msgLines = [];
@@ -719,6 +791,107 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
         const msg = `Hola! Te propongo este canje del álbum Mundial 2026:\n\nYo te doy: ${proposal.iCanGive.join(', ')}\n\nTú me das: ${proposal.iCanGet.join(', ')}\n\n¿Te sirve?`;
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+    };
+
+    window.sendInternalTradeRequest = async function() {
+        const proposal = window.smartProposalContext;
+        if (!currentUser || !proposal || !proposal.friendUid) return;
+
+        try {
+            const request = await createTradeRequest({
+                currentUser,
+                targetUid: proposal.friendUid,
+                targetEmail: proposal.friendEmail,
+                proposal: {
+                    iCanGet: proposal.iCanGet,
+                    iCanGive: proposal.iCanGive
+                }
+            });
+
+            pushNotification({
+                title: 'Solicitud enviada',
+                message: `Tu solicitud de canje para ${proposal.friendEmail} quedó pendiente.`,
+                type: 'trade-request',
+                action: 'friends'
+            });
+            alert('Solicitud enviada. Cuando la otra persona acepte, se habilita el chat.');
+            tradeRequestsById[request.id] = request;
+            window.openFriends();
+        } catch (e) {
+            alert('No se pudo enviar la solicitud. Revisa Firebase.');
+        }
+    };
+
+    window.respondToTradeRequest = async function(requestId, status) {
+        const request = tradeRequestsById[requestId];
+        if (!request || !currentUser) return;
+
+        try {
+            await respondTradeRequest({ request, currentUser, status });
+            pushNotification({
+                title: status === 'accepted' ? 'Solicitud aceptada' : 'Solicitud rechazada',
+                message: status === 'accepted' ? 'Ya puedes abrir el chat para coordinar el canje.' : 'La solicitud fue rechazada.',
+                type: 'trade-request',
+                action: 'friends'
+            });
+            await window.renderFriends();
+            if (status === 'accepted') window.openTradeChat(requestId);
+        } catch (e) {
+            alert('No se pudo actualizar la solicitud.');
+        }
+    };
+
+    window.openTradeChat = function(requestId) {
+        const request = tradeRequestsById[requestId];
+        if (!request || !currentUser) return;
+
+        if (request.status !== 'accepted') {
+            alert('El chat se habilita cuando la solicitud sea aceptada.');
+            return;
+        }
+
+        if (unsubscribeChat) unsubscribeChat();
+        currentChat = request;
+        const otherEmail = request.fromUid === currentUser.uid ? request.toEmail : request.fromEmail;
+        document.getElementById('chat-title').textContent = otherEmail.split('@')[0].toUpperCase();
+        document.getElementById('chat-context').textContent = getRequestSummary(request);
+        document.getElementById('chat-input').value = '';
+        window.switchView('view-chat');
+
+        unsubscribeChat = watchChatMessages(request.chatId, (messages) => {
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = messages.length ? '' : '<div class="friends-empty"><strong>Sin mensajes</strong>Escribe el primer mensaje para coordinar el canje.</div>';
+
+            messages.forEach(message => {
+                const bubble = document.createElement('div');
+                bubble.className = `chat-bubble ${message.fromUid === currentUser.uid ? 'mine' : ''}`;
+                const meta = document.createElement('div');
+                meta.className = 'chat-meta';
+                meta.textContent = message.fromEmail;
+                const text = document.createElement('div');
+                text.textContent = message.text;
+                bubble.appendChild(meta);
+                bubble.appendChild(text);
+                container.appendChild(bubble);
+            });
+
+            container.scrollTop = container.scrollHeight;
+        });
+    };
+
+    window.sendCurrentChatMessage = async function() {
+        const input = document.getElementById('chat-input');
+        if (!currentChat || !currentUser || !input) return;
+
+        const text = input.value.trim();
+        if (!text) return;
+
+        input.value = '';
+        await sendChatMessage({
+            chatId: currentChat.chatId,
+            currentUser,
+            text
+        });
     };
 
     /* === SCANNER LOGIC === */
