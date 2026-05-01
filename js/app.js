@@ -9,6 +9,7 @@ import { loginUser, logoutUser, persistAuthSession, registerUser, watchAuthState
 import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists } from "./services/albumService.js";
 import { auth, db } from "./services/firebaseService.js";
 import { addFriendByEmail, addFriendToGroup, createFriendGroup, getFriendGroups, getFriendSummaries, getFriendTradeMatches, registerUserForFriendLookup } from "./services/friendsService.js";
+import { addNotification, clearNotifications, formatNotificationTime, getNotifications, getUnreadNotificationCount, markAllNotificationsRead, markMilestoneNotified, wasMilestoneNotified } from "./services/notificationService.js";
 import { createStickerEl, filterTeams, openSummaryView, openTeamView, renderGroupList, switchSummaryTab, toggleGroup } from "./ui/albumView.js";
 import { renderHomeDashboard, renderPowerDashboard } from "./ui/powerDashboard.js";
 import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
@@ -115,15 +116,51 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
 
     /* === ALBUM LOGIC === */
+    function pushNotification(data) {
+        if (!currentUser) return;
+        addNotification(currentUser.uid, data);
+        window.renderNotificationBadge();
+    }
+
+    function maybeNotifyProgressMilestone(previousStats, nextStats) {
+        if (!currentUser) return;
+
+        const milestones = [25, 50, 75, 100];
+        const previousPercentage = Number(previousStats.percentage);
+        const nextPercentage = Number(nextStats.percentage);
+
+        for (const milestone of milestones) {
+            if (previousPercentage < milestone && nextPercentage >= milestone && !wasMilestoneNotified(currentUser.uid, milestone)) {
+                pushNotification({
+                    title: `Álbum al ${milestone}%`,
+                    message: `Llegaste al ${milestone}% del álbum. Vas en ${nextStats.unique} láminas únicas.`,
+                    type: 'milestone',
+                    action: 'summary'
+                });
+                markMilestoneNotified(currentUser.uid, milestone);
+            }
+        }
+    }
+
     window.updateSticker = function(id, delta) {
         if (!currentUser || !stateRef) return;
 
+        const previousStats = getAlbumStats(window.state);
         const newVal = (window.state[id] || 0) + delta;
         if (newVal < 0) return; 
         
         // Optimistic local update
         window.state[id] = newVal;
         addActivity(currentUser.uid, `${delta > 0 ? 'Agregaste' : 'Quitaste'} ${id}`);
+        if (delta > 0 && newVal > 1) {
+            pushNotification({
+                title: 'Nueva repetida',
+                message: `${id} ahora está repetida y puede servir para canjes.`,
+                type: 'duplicate',
+                action: 'friends'
+            });
+        }
+        maybeNotifyProgressMilestone(previousStats, getAlbumStats(window.state));
         localStorage.setItem(`album-2026-${currentUser.uid}`, JSON.stringify(window.state));
         refreshLocalUI();
 
@@ -150,6 +187,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         document.getElementById('stat-dup').innerText = `${stats.duplicates}`;
         document.getElementById('stat-pct').innerText = `${stats.percentage}% Listo`;
         document.getElementById('progress-bar').style.width = `${stats.percentage}%`;
+        window.renderNotificationBadge();
         renderHomeDashboard({
             container: document.getElementById('home-pro-dashboard'),
             albumDatabase: window.DB,
@@ -209,6 +247,14 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         });
 
         addActivity(currentUser.uid, `Agregaste paquete de ${result.accepted.length} láminas`);
+        if (result.accepted.length > 0) {
+            pushNotification({
+                title: 'Sobre agregado',
+                message: `Se agregaron ${result.accepted.length} láminas desde el sobre.`,
+                type: 'pack',
+                action: 'summary'
+            });
+        }
         resultEl.textContent = result.message;
         input.value = '';
     };
@@ -301,6 +347,90 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         return createStickerEl(id, window.state, window.updateSticker);
     };
 
+    window.renderNotificationBadge = function() {
+        const badge = document.getElementById('notification-badge');
+        if (!badge) return;
+        if (!currentUser) {
+            badge.hidden = true;
+            return;
+        }
+
+        const count = getUnreadNotificationCount(currentUser.uid);
+        badge.textContent = count > 9 ? '9+' : `${count}`;
+        badge.hidden = count === 0;
+    };
+
+    function openNotificationAction(action) {
+        if (action === 'friends') {
+            window.openFriends();
+            return;
+        }
+
+        if (action === 'summary') {
+            window.openSummary();
+            return;
+        }
+
+        window.goHome();
+    }
+
+    window.renderNotifications = function() {
+        const list = document.getElementById('notification-list');
+        if (!list || !currentUser) return;
+
+        const notifications = getNotifications(currentUser.uid);
+
+        if (notifications.length === 0) {
+            list.className = '';
+            list.innerHTML = '<div class="notification-empty"><strong>Sin notificaciones</strong><br>Cuando haya avances, grupos o canjes importantes aparecerán aquí.</div>';
+            return;
+        }
+
+        list.className = 'notification-list';
+        list.innerHTML = '';
+
+        notifications.forEach(item => {
+            const card = document.createElement('div');
+            card.className = `notification-card ${item.read ? '' : 'unread'}`;
+            card.innerHTML = `
+                <div class="notification-top">
+                    <div class="notification-title">${item.title}</div>
+                    <div class="notification-time">${formatNotificationTime(item.at)}</div>
+                </div>
+                <div class="notification-message">${item.message}</div>
+            `;
+
+            if (item.action) {
+                card.addEventListener('click', () => openNotificationAction(item.action));
+                card.style.cursor = 'pointer';
+            }
+
+            list.appendChild(card);
+        });
+    };
+
+    window.openNotifications = function() {
+        if (!currentUser) return;
+        markAllNotificationsRead(currentUser.uid);
+        window.renderNotificationBadge();
+        window.renderNotifications();
+        window.switchView('view-notifications');
+    };
+
+    window.markNotificationsRead = function() {
+        if (!currentUser) return;
+        markAllNotificationsRead(currentUser.uid);
+        window.renderNotificationBadge();
+        window.renderNotifications();
+    };
+
+    window.clearAllNotifications = function() {
+        if (!currentUser) return;
+        clearNotifications(currentUser.uid);
+        window.renderNotificationBadge();
+        window.renderNotifications();
+    };
+
     function bindStaticEvents() {
         if (document.body.dataset.eventsBound === 'true') return;
         document.body.dataset.eventsBound = 'true';
@@ -351,9 +481,11 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'open-scanner': window.openScanner,
                 'open-share': () => window.switchView('view-share'),
                 'open-summary': window.openSummary,
+                'open-notifications': window.openNotifications,
                 'open-team': (button) => window.openTeam(button.dataset.teamCode, button.dataset.teamName, button.dataset.teamSpecial === 'true'),
                 'open-trade': window.openTrade,
                 'open-whatsapp': (button) => window.open(button.dataset.url, '_blank'),
+                'mark-notifications-read': window.markNotificationsRead,
                 'share-card': window.shareCollectionCard,
                 'share-repeated': window.shareRepeated,
                 'smart-proposal': window.sendSmartProposal,
@@ -365,6 +497,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                     const help = document.getElementById(button.dataset.helpTarget);
                     if (help) help.hidden = !help.hidden;
                 },
+                'clear-notifications': window.clearAllNotifications,
                 'toggle-group': (button) => window.toggleGroup(button.dataset.groupId)
             };
 
@@ -438,6 +571,12 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             friendGroups.push(group);
             activeFriendGroupId = group.id;
             input.value = '';
+            pushNotification({
+                title: 'Grupo creado',
+                message: `Ya puedes agregar amigos al grupo ${group.name} y comparar el ranking.`,
+                type: 'group',
+                action: 'friends'
+            });
             status.className = 'ok';
             status.textContent = `Grupo ${group.name} creado.`;
             window.renderFriends();
@@ -478,6 +617,14 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             input.value = '';
             await addFriendToGroup(currentUser, selectedGroupId, result.friendUid, result.email);
             activeFriendGroupId = selectedGroupId;
+            pushNotification({
+                title: 'Amigo agregado',
+                message: selectedGroupId === 'all'
+                    ? `${result.email} ya aparece en tus amigos.`
+                    : `${result.email} fue agregado al grupo seleccionado.`,
+                type: 'friend',
+                action: 'friends'
+            });
             status.className = 'ok';
             status.textContent = selectedGroupId === 'all' ? 'Amigo agregado correctamente.' : 'Amigo agregado al grupo.';
             window.renderFriends();

@@ -25,6 +25,15 @@ Usa esta lista antes de subir cambios grandes o antes de mezclar a `master`.
 - Verificar que las estadisticas de la home cambian al instante.
 - Recargar la pagina y confirmar que el estado se conserva.
 
+## Notificaciones internas
+
+- Abrir la campana de notificaciones desde la home.
+- Confirmar que se muestra la lista o el estado vacio.
+- Agregar una lamina repetida y confirmar que aparece una notificacion.
+- Agregar un sobre y confirmar que aparece una notificacion.
+- Crear un grupo y confirmar que aparece una notificacion.
+- Probar `Marcar leidas` y `Limpiar`.
+
 ## Resumen
 
 - Abrir `Ver Resumen Detallado`.
