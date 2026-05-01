@@ -358,9 +358,32 @@
             border-left: 4px solid var(--fifa-lime);
             border-radius: 6px;
             padding: 14px;
+            cursor: pointer;
         }
+        .nearby-card-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
         .nearby-card-title { color: var(--text-main); font-weight: 900; font-size: 14px; margin-bottom: 4px; }
         .nearby-card-copy { color: var(--text-muted); font-size: 12px; line-height: 1.5; margin-bottom: 12px; }
+        .nearby-match-count {
+            min-width: 68px;
+            border: 1px solid rgba(200,212,0,0.34);
+            background: rgba(200,212,0,0.08);
+            border-radius: 6px;
+            color: var(--fifa-lime);
+            font-size: 24px;
+            font-weight: 900;
+            text-align: center;
+            padding: 7px 8px;
+            line-height: 1;
+        }
+        .nearby-match-count span {
+            display: block;
+            color: var(--text-muted);
+            font-size: 9px;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+        .nearby-profile { border-top: 1px solid var(--border-color); margin-top: 12px; padding-top: 12px; cursor: default; }
         .nearby-card .btn-trade { margin-bottom: 0; padding: 13px 10px; font-size: 12px; }
         .leaflet-container { background: #101010; font-family: 'Noto Sans', sans-serif; }
         .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #111; color: white; border: 1px solid rgba(255,255,255,0.18); }

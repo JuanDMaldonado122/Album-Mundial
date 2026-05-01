@@ -527,10 +527,20 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
         listEl.className = 'nearby-list';
         listEl.innerHTML = candidates.map(candidate => `
-            <div class="nearby-card">
-                <div class="nearby-card-title">${escapeHtml(getDisplayName(candidate))}</div>
-                <div class="nearby-card-copy">Está a ${candidate.distanceKm.toFixed(1)} km aprox. Pueden hacer ${candidate.matchCount} canjes. Te puede dar ${candidate.iCanGet.length} y tú le puedes dar ${candidate.iCanGive.length}.</div>
-                ${candidate.matchCount > 0 ? `<button class="btn-trade" data-action="send-nearby-request" data-uid="${candidate.uid}">Enviar solicitud</button>` : ''}
+            <div class="nearby-card" data-action="toggle-nearby-profile" data-uid="${candidate.uid}">
+                <div class="nearby-card-summary">
+                    <div>
+                        <div class="nearby-card-title">${escapeHtml(getDisplayName(candidate))}</div>
+                        <div class="nearby-card-copy">${candidate.distanceKm.toFixed(1)} km aprox.</div>
+                    </div>
+                    <div class="nearby-match-count">${candidate.matchCount}<span>canjes</span></div>
+                </div>
+                <div class="nearby-profile" id="nearby-profile-${candidate.uid}" hidden>
+                    <div class="nearby-card-copy">Te puede dar ${candidate.iCanGet.length} láminas y tú le puedes dar ${candidate.iCanGive.length}.</div>
+                    ${candidate.iCanGet.length ? `<div class="match-section-title">Te puede dar</div><div class="match-tags">${candidate.iCanGet.map(id => `<span class="match-tag give">${id}</span>`).join('')}</div>` : ''}
+                    ${candidate.iCanGive.length ? `<div class="match-section-title">Tú le puedes dar</div><div class="match-tags">${candidate.iCanGive.map(id => `<span class="match-tag take">${id}</span>`).join('')}</div>` : ''}
+                    ${candidate.matchCount > 0 ? `<button class="btn-trade" data-action="send-nearby-request" data-uid="${candidate.uid}">Enviar solicitud</button>` : '<div class="nearby-card-copy">Por ahora no hay canjes compatibles.</div>'}
+                </div>
             </div>
         `).join('');
     }
@@ -678,6 +688,11 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'toggle-help': (button) => {
                     const help = document.getElementById(button.dataset.helpTarget);
                     if (help) help.hidden = !help.hidden;
+                },
+                'toggle-nearby-profile': (button) => {
+                    if (event.target.closest('[data-action="send-nearby-request"]')) return;
+                    const profile = document.getElementById(`nearby-profile-${button.dataset.uid}`);
+                    if (profile) profile.hidden = !profile.hidden;
                 },
                 'clear-notifications': window.clearAllNotifications,
                 'disable-nearby': window.disableNearby,
