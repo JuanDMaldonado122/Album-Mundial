@@ -125,6 +125,8 @@
         /* Groups List */
         .section-label { font-family: 'Bebas Neue', sans-serif; font-size: 22px; font-weight: 400; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; color: var(--text-main); text-transform: uppercase; letter-spacing: 3px; }
         .section-label::before { content: ''; width: 4px; height: 22px; background: var(--fifa-red); border-radius: 2px; }
+        .search-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
+        .search-header .section-label { margin-bottom: 0; min-width: 0; }
         
         .groups-container { display: flex; flex-direction: column; gap: 14px; }
         .group-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; transition: all 0.3s; }
@@ -234,7 +236,7 @@
             text-transform: lowercase;
         }
         .help-dot:active { transform: scale(0.94); background: rgba(200,212,0,0.16); }
-        .section-help { margin: -4px 0 12px; }
+        .section-help { margin: 0; flex: 0 0 auto; }
         .inline-help {
             background: rgba(200,212,0,0.08);
             border: 1px solid rgba(200,212,0,0.28);
@@ -245,6 +247,7 @@
             padding: 12px 14px;
             margin: -8px 0 14px;
         }
+        .teams-help { margin: 10px 0 0; }
         .inline-help strong { color: var(--text-main); }
         .tool-help { display: grid; gap: 8px; }
         .inline-help span {
