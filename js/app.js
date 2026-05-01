@@ -476,6 +476,10 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     }
 
     function getLocationErrorMessage(error) {
+        if (!window.isSecureContext) {
+            return 'La ubicación real en celular necesita HTTPS. Este enlace local usa HTTP; usa Probar mapa o despliega la app en Firebase Hosting para probar permisos reales.';
+        }
+
         if (error?.code === 1) {
             return 'El permiso de ubicación está bloqueado. En el navegador, abre permisos del sitio y permite Ubicación; luego toca Activar ubicación otra vez.';
         }
@@ -590,6 +594,10 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
     window.openNearby = function() {
         window.switchView('view-nearby');
+        const status = document.getElementById('nearby-status');
+        if (status && !window.isSecureContext) {
+            status.textContent = 'Estás en HTTP local. En celular, la ubicación real suele requerir HTTPS; usa Probar mapa o despliega en Firebase Hosting.';
+        }
         renderNearbyMap();
         renderNearbyList();
     };
