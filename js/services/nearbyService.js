@@ -20,7 +20,7 @@ export function calculateDistanceKm(a, b) {
     return radiusKm * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 }
 
-export async function saveNearbyAvailability(currentUser, coords) {
+export async function saveNearbyAvailability(currentUser, coords, profile = {}) {
     const location = {
         lat: roundLocation(coords.latitude),
         lng: roundLocation(coords.longitude)
@@ -29,6 +29,7 @@ export async function saveNearbyAvailability(currentUser, coords) {
     await set(ref(db, `nearbyCollectors/${currentUser.uid}`), {
         uid: currentUser.uid,
         email: currentUser.email,
+        displayName: profile.displayName || currentUser.email,
         location,
         active: true,
         updatedAt: Date.now()
@@ -55,12 +56,21 @@ export async function getNearbyCollectors(currentUser) {
 
     for (const collector of collectors) {
         let state = {};
+        let profile = {};
         try {
             const albumSnap = await get(ref(db, `users/${collector.uid}/album`));
             if (albumSnap.exists()) state = albumSnap.val();
         } catch (e) {}
+        try {
+            const profileSnap = await get(ref(db, `profiles/${collector.uid}`));
+            if (profileSnap.exists()) profile = profileSnap.val();
+        } catch (e) {}
 
-        withAlbum.push({ ...collector, state });
+        withAlbum.push({
+            ...collector,
+            displayName: profile.displayName || collector.displayName || collector.email,
+            state
+        });
     }
 
     return withAlbum;

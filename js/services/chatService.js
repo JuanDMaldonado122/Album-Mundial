@@ -5,7 +5,7 @@ function normalizeRequest(snapshot, id) {
     return { id, ...snapshot };
 }
 
-export async function createTradeRequest({ currentUser, targetUid, targetEmail, proposal }) {
+export async function createTradeRequest({ currentUser, currentProfile = {}, targetUid, targetEmail, targetDisplayName, proposal }) {
     const requestRef = push(ref(db, 'tradeRequests'));
     const requestId = requestRef.key;
     const chatId = requestId;
@@ -15,8 +15,10 @@ export async function createTradeRequest({ currentUser, targetUid, targetEmail, 
         status: 'pending',
         fromUid: currentUser.uid,
         fromEmail: currentUser.email,
+        fromDisplayName: currentProfile.displayName || currentUser.email,
         toUid: targetUid,
         toEmail: targetEmail,
+        toDisplayName: targetDisplayName || targetEmail,
         proposal,
         createdAt: Date.now()
     };
@@ -58,8 +60,8 @@ export async function respondTradeRequest({ request, currentUser, status }) {
         await set(ref(db, `chats/${request.chatId}/meta`), {
             requestId: request.id,
             participants: {
-                [request.fromUid]: request.fromEmail,
-                [request.toUid]: request.toEmail
+                [request.fromUid]: request.fromDisplayName || request.fromEmail,
+                [request.toUid]: request.toDisplayName || request.toEmail
             },
             createdAt: request.createdAt || Date.now(),
             acceptedAt: Date.now()
@@ -77,13 +79,14 @@ export function watchChatMessages(chatId, onMessages) {
     });
 }
 
-export async function sendChatMessage({ chatId, currentUser, text }) {
+export async function sendChatMessage({ chatId, currentUser, currentProfile = {}, text }) {
     const cleanText = text.trim();
     if (!cleanText) return;
 
     await set(push(ref(db, `chats/${chatId}/messages`)), {
         fromUid: currentUser.uid,
         fromEmail: currentUser.email,
+        fromDisplayName: currentProfile.displayName || currentUser.email,
         text: cleanText,
         createdAt: Date.now()
     });

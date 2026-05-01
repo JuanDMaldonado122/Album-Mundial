@@ -98,10 +98,15 @@ export async function getFriendSummaries(currentUser, allStickers, myState) {
 
     for (const [uid, email] of Object.entries(snap.val())) {
         let state = {};
+        let profile = {};
 
         try {
             const friendAlbumSnap = await get(ref(db, `users/${uid}/album`));
             if (friendAlbumSnap.exists()) state = friendAlbumSnap.val();
+        } catch (e) {}
+        try {
+            const profileSnap = await get(ref(db, `profiles/${uid}`));
+            if (profileSnap.exists()) profile = profileSnap.val();
         } catch (e) {}
 
         const duplicateIds = allStickers.filter(id => (state[id] || 0) > 1);
@@ -111,6 +116,7 @@ export async function getFriendSummaries(currentUser, allStickers, myState) {
         summaries.push({
             uid,
             email,
+            displayName: profile.displayName || email,
             state,
             duplicateCount: duplicateIds.length,
             matchCount: matches.length,

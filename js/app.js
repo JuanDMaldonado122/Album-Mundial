@@ -496,14 +496,15 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         nearbyMarkers.forEach(marker => marker.remove());
         nearbyMarkers = [];
 
-        nearbyMarkers.push(window.L.marker([myNearbyLocation.lat, myNearbyLocation.lng])
+            nearbyMarkers.push(window.L.marker([myNearbyLocation.lat, myNearbyLocation.lng])
             .addTo(nearbyMap)
             .bindPopup('Tu zona aproximada'));
 
         candidates.forEach(candidate => {
+            const name = escapeHtml(getDisplayName(candidate));
             const marker = window.L.marker([candidate.location.lat, candidate.location.lng])
                 .addTo(nearbyMap)
-                .bindPopup(`${candidate.email}<br>${candidate.matchCount} canjes posibles`);
+                .bindPopup(`${name}<br>${candidate.matchCount} canjes posibles`);
             nearbyMarkers.push(marker);
         });
 
@@ -527,7 +528,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         listEl.className = 'nearby-list';
         listEl.innerHTML = candidates.map(candidate => `
             <div class="nearby-card">
-                <div class="nearby-card-title">${candidate.email}</div>
+                <div class="nearby-card-title">${escapeHtml(getDisplayName(candidate))}</div>
                 <div class="nearby-card-copy">Está a ${candidate.distanceKm.toFixed(1)} km aprox. Pueden hacer ${candidate.matchCount} canjes. Te puede dar ${candidate.iCanGet.length} y tú le puedes dar ${candidate.iCanGive.length}.</div>
                 ${candidate.matchCount > 0 ? `<button class="btn-trade" data-action="send-nearby-request" data-uid="${candidate.uid}">Enviar solicitud</button>` : ''}
             </div>
@@ -575,7 +576,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
         try {
             const position = await getCurrentPosition();
-            myNearbyLocation = await saveNearbyAvailability(currentUser, position.coords);
+            myNearbyLocation = await saveNearbyAvailability(currentUser, position.coords, currentProfile);
             pushNotification({
                 title: 'Canjes cerca activado',
                 message: 'Tu zona aproximada ya aparece para encontrar canjes cercanos.',
@@ -755,6 +756,10 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         })[char]);
     }
 
+    function getDisplayName(entity = {}) {
+        return entity.displayName || entity.fromDisplayName || entity.toDisplayName || entity.email || entity.fromEmail || entity.toEmail || 'Coleccionista';
+    }
+
     function renderTradeRequests(requests) {
         const container = document.getElementById('trade-requests-list');
         if (!container || !currentUser) return;
@@ -771,8 +776,10 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 <div class="insight-kicker">Solicitudes de canje</div>
                 ${relevant.map(request => {
                     const incoming = request.toUid === currentUser.uid;
-                    const otherEmail = incoming ? request.fromEmail : request.toEmail;
-                    const title = incoming ? `${otherEmail} quiere canjear` : `Solicitud para ${otherEmail}`;
+                    const otherName = incoming
+                        ? (request.fromDisplayName || request.fromEmail)
+                        : (request.toDisplayName || request.toEmail);
+                    const title = incoming ? `${otherName} quiere canjear` : `Solicitud para ${otherName}`;
                     const status = request.status === 'accepted' ? 'Aceptada' : 'Pendiente';
                     const actions = request.status === 'accepted'
                         ? `<button class="btn-trade" data-action="open-chat" data-request-id="${request.id}">Abrir chat</button>`
@@ -905,7 +912,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
             const myStats = getAlbumStats(window.state);
             const ranking = [
-                { email: 'Tu álbum', totalOwned: myStats.unique },
+                { displayName: currentProfile.displayName || 'Tu álbum', totalOwned: myStats.unique },
                 ...visibleFriendSummaries
             ].sort((a, b) => b.totalOwned - a.totalOwned);
 
@@ -913,7 +920,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 <div class="insight-card">
                     <div class="insight-kicker">Ranking: ${activeGroupName}</div>
                     <div class="ranking-list">
-                        ${ranking.map((item, index) => `<div class="ranking-row"><span class="ranking-name">${index + 1}. ${item.email}</span><span class="ranking-score">${item.totalOwned}</span></div>`).join('')}
+                        ${ranking.map((item, index) => `<div class="ranking-row"><span class="ranking-name">${index + 1}. ${escapeHtml(getDisplayName(item))}</span><span class="ranking-score">${item.totalOwned}</span></div>`).join('')}
                     </div>
                 </div>
             `;
@@ -923,21 +930,21 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 card.className = 'friend-card';
                 card.innerHTML = `
                     <div class="friend-info">
-                        <div class="friend-email">${friend.email}</div>
+                        <div class="friend-email">${escapeHtml(getDisplayName(friend))}</div>
                         <div class="friend-stats">${friend.duplicateCount} repetidas&nbsp;&nbsp;-&nbsp;&nbsp;${friend.totalOwned} en total</div>
                     </div>
                     ${friend.matchCount > 0 ? `<div class="friend-match-badge">${friend.matchCount} canjes</div>` : ''}
                     <svg class="friend-arrow" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
                 `;
-                card.addEventListener('click', () => window.viewFriendTrades(friend.uid, friend.email, friend.state));
+                card.addEventListener('click', () => window.viewFriendTrades(friend.uid, friend.email, friend.state, friend.displayName));
                 listEl.appendChild(card);
             }
         } catch(e) {
             listEl.innerHTML = '<div class="friends-empty"><strong>Error</strong>No se pudieron cargar los amigos. Verifica las reglas de Firebase Database.</div>';
         }
     };
-    window.viewFriendTrades = function(fUid, fEmail, fState) {
-        document.getElementById('friend-trade-title').textContent = fEmail.split('@')[0].toUpperCase();
+    window.viewFriendTrades = function(fUid, fEmail, fState, fDisplayName = '') {
+        document.getElementById('friend-trade-title').textContent = (fDisplayName || fEmail.split('@')[0]).toUpperCase();
         window.switchView('view-friend-trades');
 
         const allStickers = window.getAllStickers();
@@ -954,6 +961,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             window.smartProposalContext = {
                 friendUid: fUid,
                 friendEmail: fEmail,
+                friendDisplayName: fDisplayName || fEmail,
                 iCanGet: iCanGet.slice(0, proposalSize),
                 iCanGive: iCanGive.slice(0, proposalSize)
             };
@@ -1001,8 +1009,10 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         try {
             const request = await createTradeRequest({
                 currentUser,
+                currentProfile,
                 targetUid: proposal.friendUid,
                 targetEmail: proposal.friendEmail,
+                targetDisplayName: proposal.friendDisplayName,
                 proposal: {
                     iCanGet: proposal.iCanGet,
                     iCanGive: proposal.iCanGive
@@ -1011,7 +1021,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
             pushNotification({
                 title: 'Solicitud enviada',
-                message: `Tu solicitud de canje para ${proposal.friendEmail} quedó pendiente.`,
+                message: `Tu solicitud de canje para ${proposal.friendDisplayName || proposal.friendEmail} quedó pendiente.`,
                 type: 'trade-request',
                 action: 'friends'
             });
@@ -1030,8 +1040,10 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         try {
             await createTradeRequest({
                 currentUser,
+                currentProfile,
                 targetUid: candidate.uid,
                 targetEmail: candidate.email,
+                targetDisplayName: candidate.displayName,
                 proposal: {
                     iCanGet: candidate.iCanGet,
                     iCanGive: candidate.iCanGive
@@ -1040,7 +1052,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
             pushNotification({
                 title: 'Solicitud cercana enviada',
-                message: `Tu solicitud de canje para ${candidate.email} quedó pendiente.`,
+                message: `Tu solicitud de canje para ${getDisplayName(candidate)} quedó pendiente.`,
                 type: 'nearby',
                 action: 'friends'
             });
@@ -1080,8 +1092,10 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
         if (unsubscribeChat) unsubscribeChat();
         currentChat = request;
-        const otherEmail = request.fromUid === currentUser.uid ? request.toEmail : request.fromEmail;
-        document.getElementById('chat-title').textContent = otherEmail.split('@')[0].toUpperCase();
+        const otherName = request.fromUid === currentUser.uid
+            ? (request.toDisplayName || request.toEmail)
+            : (request.fromDisplayName || request.fromEmail);
+        document.getElementById('chat-title').textContent = otherName.toUpperCase();
         document.getElementById('chat-context').textContent = getRequestSummary(request);
         document.getElementById('chat-input').value = '';
         window.switchView('view-chat');
@@ -1095,7 +1109,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 bubble.className = `chat-bubble ${message.fromUid === currentUser.uid ? 'mine' : ''}`;
                 const meta = document.createElement('div');
                 meta.className = 'chat-meta';
-                meta.textContent = message.fromEmail;
+                meta.textContent = message.fromDisplayName || message.fromEmail;
                 const text = document.createElement('div');
                 text.textContent = message.text;
                 bubble.appendChild(meta);
@@ -1118,6 +1132,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         await sendChatMessage({
             chatId: currentChat.chatId,
             currentUser,
+            currentProfile,
             text
         });
     };
