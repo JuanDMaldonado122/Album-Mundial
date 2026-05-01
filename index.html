@@ -96,20 +96,30 @@
         </button>
 
         <div class="pro-actions-grid">
-            <button class="btn-secondary btn-flex" data-action="open-pack">
-                Agregar Paquete
-            </button>
+            <div class="action-with-help">
+                <button class="btn-secondary btn-flex" data-action="open-pack">
+                    Agregar Sobre
+                </button>
+                <button class="help-dot" type="button" data-action="toggle-help" data-help-target="pack-help" aria-label="Qué significa agregar paquete">i</button>
+            </div>
             <button class="btn-secondary btn-flex" data-action="open-power">
                 Panel Pro
             </button>
+        </div>
+        <div class="inline-help" id="pack-help" hidden>
+            <strong>Agregar sobre</strong> sirve para registrar varias láminas de una vez. Pegas los códigos del paquete, como <span>ARG 1</span>, <span>BRA 5</span> o <span>FWC 8</span>, y la app los suma al álbum.
         </div>
 
         <div class="pro-dashboard" id="home-pro-dashboard"></div>
 
         <div class="search-wrapper" style="margin-top: 30px; margin-bottom: 20px;">
-            <div class="section-label">Explorar Equipos</div>
+            <div class="section-label">Equipos del Álbum</div>
+            <button class="help-dot section-help" type="button" data-action="toggle-help" data-help-target="teams-help" aria-label="Cómo agregar láminas de equipos">i</button>
             <div class="friends-search-box" style="margin-bottom: 0;">
                 <input type="text" id="team-search" placeholder="Buscar equipo (Ej: Colombia)..." autocomplete="off">
+            </div>
+            <div class="inline-help" id="teams-help" hidden>
+                Los equipos ya vienen cargados. Para agregar láminas, abre un equipo y toca los códigos que tengas; si tocas el mismo código dos veces, queda como repetida.
             </div>
         </div>
 
@@ -122,12 +132,16 @@
     <div id="view-pack" class="view">
         <div class="nav-bar">
             <button class="btn-back" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-            <h2 class="nav-title">Paquete Nuevo</h2>
+            <h2 class="nav-title">Sobre Nuevo</h2>
         </div>
         <div class="trade-card">
+            <div class="pack-guide">
+                <div class="insight-kicker">Cómo usarlo</div>
+                <div class="insight-copy">Pega todos los códigos del sobre, uno por línea o separados por coma. La app valida los códigos y agrega solo los que existan en el álbum.</div>
+            </div>
             <label class="trade-label">Códigos del paquete</label>
             <textarea id="pack-input" class="pack-input" placeholder="ARG 1&#10;BRA 5&#10;COL 3&#10;FWC 8"></textarea>
-            <button class="btn-primary" data-action="add-pack">Agregar Paquete</button>
+            <button class="btn-primary" data-action="add-pack">Agregar Sobre</button>
             <div id="pack-result" class="mini-feedback"></div>
         </div>
     </div>

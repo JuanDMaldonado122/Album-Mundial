@@ -218,6 +218,46 @@
         .trade-icon { display: flex; justify-content: center; color: var(--text-muted); font-size: 32px; font-weight: 900; margin-bottom: 24px; }
         .pro-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 18px; }
         .pro-actions-grid .btn-secondary { margin-bottom: 0; padding: 14px 10px; font-size: 12px; }
+        .action-with-help { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: stretch; }
+        .help-dot {
+            width: 44px;
+            min-width: 44px;
+            min-height: 44px;
+            border-radius: 50%;
+            border: 1px solid rgba(200,212,0,0.45);
+            background: rgba(200,212,0,0.08);
+            color: var(--fifa-lime);
+            font-size: 18px;
+            font-weight: 900;
+            line-height: 1;
+            cursor: pointer;
+            text-transform: lowercase;
+        }
+        .help-dot:active { transform: scale(0.94); background: rgba(200,212,0,0.16); }
+        .section-help { margin: -4px 0 12px; }
+        .inline-help {
+            background: rgba(200,212,0,0.08);
+            border: 1px solid rgba(200,212,0,0.28);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 12px;
+            line-height: 1.55;
+            padding: 12px 14px;
+            margin: -8px 0 14px;
+        }
+        .inline-help strong { color: var(--text-main); }
+        .inline-help span {
+            color: var(--fifa-lime);
+            font-weight: 900;
+            white-space: nowrap;
+        }
+        .pack-guide {
+            background: rgba(0,0,0,0.32);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 14px;
+            margin-bottom: 18px;
+        }
         .pro-dashboard { display: grid; gap: 10px; margin: 12px 0 24px; }
         .insight-card { background: rgba(255,255,255,0.055); border: 1px solid var(--border-color); border-radius: 6px; padding: 14px; }
         .insight-kicker { color: var(--fifa-lime); font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }

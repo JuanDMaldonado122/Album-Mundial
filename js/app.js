@@ -351,6 +351,10 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'share-card': window.shareCollectionCard,
                 'share-repeated': window.shareRepeated,
                 'smart-proposal': window.sendSmartProposal,
+                'toggle-help': (button) => {
+                    const help = document.getElementById(button.dataset.helpTarget);
+                    if (help) help.hidden = !help.hidden;
+                },
                 'toggle-group': (button) => window.toggleGroup(button.dataset.groupId)
             };
 
