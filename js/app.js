@@ -4,14 +4,13 @@ import { generateStickerPdf } from "./features/pdfExport.js";
 import { captureAndScan, closeScanner, openScanner } from "./features/scanner.js";
 import { createCollectionShareCard } from "./features/shareCard.js";
 import { executeManualTrade, openTradeView } from "./features/trade.js";
-import { addActivity, getActivity } from "./services/activityService.js";
+import { addActivity } from "./services/activityService.js";
 import { loginUser, logoutUser, persistAuthSession, registerUser, watchAuthState } from "./services/authService.js";
 import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists } from "./services/albumService.js";
 import { auth, db } from "./services/firebaseService.js";
 import { addFriendByEmail, addFriendToGroup, createFriendGroup, getFriendGroups, getFriendSummaries, getFriendTradeMatches, registerUserForFriendLookup } from "./services/friendsService.js";
 import { addNotification, clearNotifications, formatNotificationTime, getNotifications, getUnreadNotificationCount, markAllNotificationsRead, markMilestoneNotified, wasMilestoneNotified } from "./services/notificationService.js";
 import { createStickerEl, filterTeams, openSummaryView, openTeamView, renderGroupList, switchSummaryTab, toggleGroup } from "./ui/albumView.js";
-import { renderHomeDashboard, renderPowerDashboard } from "./ui/powerDashboard.js";
 import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
     // 3. Database State
@@ -20,7 +19,6 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     let stateRef = null;
     let currentUser = null;
     let unsubscribeAlbum = null;
-    let lastFriendSummaries = [];
     let friendGroups = [];
     let activeFriendGroupId = 'all';
     window.smartProposalContext = null;
@@ -188,12 +186,6 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         document.getElementById('stat-pct').innerText = `${stats.percentage}% Listo`;
         document.getElementById('progress-bar').style.width = `${stats.percentage}%`;
         window.renderNotificationBadge();
-        renderHomeDashboard({
-            container: document.getElementById('home-pro-dashboard'),
-            albumDatabase: window.DB,
-            state: window.state,
-            activity: getActivity(currentUser?.uid)
-        });
     };
 
     window.shareWsp = function() {
@@ -257,27 +249,6 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         }
         resultEl.textContent = result.message;
         input.value = '';
-    };
-
-    window.openPowerDashboard = async function() {
-        window.switchView('view-power');
-
-        const container = document.getElementById('power-dashboard-content');
-        container.innerHTML = '<div class="insight-card"><div class="insight-title">Cargando panel...</div></div>';
-
-        try {
-            if (currentUser) {
-                lastFriendSummaries = await getFriendSummaries(currentUser, window.getAllStickers(), window.state);
-            }
-        } catch (e) {}
-
-        renderPowerDashboard({
-            container,
-            albumDatabase: window.DB,
-            state: window.state,
-            activity: getActivity(currentUser?.uid),
-            friendSummaries: lastFriendSummaries
-        });
     };
 
     window.switchView = function(viewId, pushState = true) {
@@ -477,7 +448,6 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'logout': window.handleLogout,
                 'open-friends': window.openFriends,
                 'open-pack': window.openPackMode,
-                'open-power': window.openPowerDashboard,
                 'open-scanner': window.openScanner,
                 'open-share': () => window.switchView('view-share'),
                 'open-summary': window.openSummary,
@@ -649,7 +619,6 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             renderFriendGroupControls();
 
             const friendSummaries = await getFriendSummaries(currentUser, allStickers, window.state);
-            lastFriendSummaries = friendSummaries;
             const visibleFriendSummaries = getActiveFriendSummaries(friendSummaries);
             const activeGroupName = activeFriendGroupId === 'all'
                 ? 'Todos'

@@ -250,8 +250,8 @@
         .trade-input { width: 100%; border: 1px solid var(--border-color); border-radius: 14px; padding: 16px; font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 24px; outline: none; background: rgba(0,0,0,0.5); transition: all 0.2s; font-family: inherit; }
         .trade-input:focus { border-color: var(--neon-purple); box-shadow: 0 0 0 2px rgba(217,70,239,0.2); }
         .trade-icon { display: flex; justify-content: center; color: var(--text-muted); font-size: 32px; font-weight: 900; margin-bottom: 24px; }
-        .pro-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 18px; }
-        .pro-actions-grid .btn-secondary { margin-bottom: 0; padding: 14px 10px; font-size: 12px; }
+        .solo-action-row { margin: 10px 0 18px; }
+        .solo-action-row .btn-secondary { margin-bottom: 0; padding: 14px 10px; font-size: 12px; }
         .action-with-help { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: stretch; }
         .help-dot {
             width: 44px;
@@ -294,7 +294,6 @@
             padding: 14px;
             margin-bottom: 18px;
         }
-        .pro-dashboard { display: grid; gap: 10px; margin: 12px 0 24px; }
         .insight-card { background: rgba(255,255,255,0.055); border: 1px solid var(--border-color); border-radius: 6px; padding: 14px; }
         .insight-kicker { color: var(--fifa-lime); font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
         .insight-title { font-weight: 900; font-size: 15px; color: var(--text-main); }

@@ -102,23 +102,17 @@
             Amigos y Canjes
         </button>
 
-        <div class="pro-actions-grid">
+        <div class="solo-action-row">
             <div class="action-with-help">
                 <button class="btn-secondary btn-flex" data-action="open-pack">
                     Agregar Sobre
                 </button>
                 <button class="help-dot" type="button" data-action="toggle-help" data-help-target="pro-tools-help" aria-label="Qué significan estas herramientas">i</button>
             </div>
-            <button class="btn-secondary btn-flex" data-action="open-power">
-                Panel Pro
-            </button>
         </div>
         <div class="inline-help tool-help" id="pro-tools-help" hidden>
             <div><strong>Agregar sobre</strong> registra varias láminas de una vez. Pegas códigos como <span>ARG 1</span>, <span>BRA 5</span> o <span>FWC 8</span>, y la app los suma al álbum.</div>
-            <div><strong>Panel Pro</strong> muestra una vista avanzada con progreso, actividad reciente, ranking y pistas rápidas para saber dónde avanzar.</div>
         </div>
-
-        <div class="pro-dashboard" id="home-pro-dashboard"></div>
 
         <div class="search-wrapper teams-search-wrapper" style="margin-top: 30px; margin-bottom: 20px;">
             <div class="search-header">
@@ -167,15 +161,6 @@
             <button class="btn-primary" data-action="add-pack">Agregar Sobre</button>
             <div id="pack-result" class="mini-feedback"></div>
         </div>
-    </div>
-
-    <!-- POWER DASHBOARD VIEW -->
-    <div id="view-power" class="view">
-        <div class="nav-bar">
-            <button class="btn-back" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-            <h2 class="nav-title">Panel Pro</h2>
-        </div>
-        <div id="power-dashboard-content"></div>
     </div>
 
     <!-- TRADE VIEW -->
