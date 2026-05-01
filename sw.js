@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mundial-26-cache-v30';
+const CACHE_NAME = 'mundial-26-cache-v31';
 const urlsToCache = [
   './',
   './index.html',

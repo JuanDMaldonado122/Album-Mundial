@@ -154,6 +154,23 @@
 
         .btn-trade { background: var(--fifa-purple); color: white; width: 100%; padding: 18px; border: none; border-radius: 6px; font-size: 15px; font-weight: 800; margin-bottom: 12px; cursor: pointer; transition: transform 0.15s; letter-spacing: 1.5px; text-transform: uppercase; box-shadow: 0 4px 20px rgba(91, 31, 130, 0.4); }
         .btn-trade:active { transform: scale(0.98); }
+        .btn-nearby {
+            width: 100%;
+            background: linear-gradient(135deg, rgba(200,212,0,0.96), rgba(255,221,45,0.9));
+            border: 1px solid rgba(255,255,255,0.22);
+            border-radius: 6px;
+            color: #101010;
+            padding: 18px;
+            font-size: 15px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            margin: 10px 0 12px;
+            letter-spacing: 1.7px;
+            text-transform: uppercase;
+            box-shadow: 0 8px 26px rgba(200,212,0,0.24);
+        }
+        .btn-nearby:active { transform: scale(0.98); box-shadow: 0 4px 14px rgba(200,212,0,0.2); }
 
         /* Groups List */
         .section-label { font-family: 'Bebas Neue', sans-serif; font-size: 22px; font-weight: 400; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; color: var(--text-main); text-transform: uppercase; letter-spacing: 3px; }
