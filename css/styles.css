@@ -332,6 +332,7 @@
             line-height: 1.6;
         }
         .nearby-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .nearby-actions [data-action="enable-nearby-demo"] { grid-column: 1 / -1; }
         .nearby-actions .btn-primary, .nearby-actions .btn-secondary { margin-bottom: 0; padding: 14px 10px; font-size: 12px; }
         .nearby-map {
             width: 100%;

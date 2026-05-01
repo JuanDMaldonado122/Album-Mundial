@@ -475,6 +475,22 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         });
     }
 
+    function getLocationErrorMessage(error) {
+        if (error?.code === 1) {
+            return 'El permiso de ubicación está bloqueado. En el navegador, abre permisos del sitio y permite Ubicación; luego toca Activar ubicación otra vez.';
+        }
+
+        if (error?.code === 2) {
+            return 'No pudimos detectar tu ubicación en este momento. Revisa conexión/GPS o usa Probar mapa para validar el flujo.';
+        }
+
+        if (error?.code === 3) {
+            return 'La ubicación tardó demasiado. Intenta de nuevo o usa Probar mapa para validar el flujo.';
+        }
+
+        return 'No se pudo obtener la ubicación. Revisa los permisos del navegador o usa Probar mapa para validar el flujo.';
+    }
+
     function renderNearbyMap(candidates = []) {
         const mapEl = document.getElementById('nearby-map');
         if (!mapEl) return;
@@ -595,8 +611,26 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             });
             await refreshNearbyCandidates();
         } catch (e) {
-            status.textContent = 'No se pudo obtener la ubicación. Revisa los permisos del navegador.';
+            status.textContent = getLocationErrorMessage(e);
             renderNearbyMap();
+        }
+    };
+
+    window.enableNearbyDemo = async function() {
+        const status = document.getElementById('nearby-status');
+        if (!currentUser) return;
+
+        status.textContent = 'Usando una zona de prueba para validar el mapa...';
+
+        try {
+            myNearbyLocation = await saveNearbyAvailability(currentUser, {
+                latitude: 4.71,
+                longitude: -74.07
+            }, currentProfile);
+            await refreshNearbyCandidates();
+            status.textContent = 'Mapa en modo prueba. Para canjes reales, activa la ubicación del navegador.';
+        } catch (e) {
+            status.textContent = 'No se pudo activar el modo prueba. Revisa Firebase.';
         }
     };
 
@@ -697,6 +731,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'clear-notifications': window.clearAllNotifications,
                 'disable-nearby': window.disableNearby,
                 'enable-nearby': window.enableNearby,
+                'enable-nearby-demo': window.enableNearbyDemo,
                 'toggle-group': (button) => window.toggleGroup(button.dataset.groupId)
             };
 
