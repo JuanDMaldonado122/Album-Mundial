@@ -63,14 +63,14 @@ export function createStickerEl(id, state, updateSticker) {
         const minusBtn = document.createElement('div');
         minusBtn.className = 'btn-minus';
         minusBtn.innerHTML = '&minus;';
-        minusBtn.onclick = event => {
+        minusBtn.addEventListener('click', event => {
             event.stopPropagation();
             updateSticker(id, -1);
-        };
+        });
         el.appendChild(minusBtn);
     }
 
-    el.onclick = () => updateSticker(id, 1);
+    el.addEventListener('click', () => updateSticker(id, 1));
 
     return el;
 }
@@ -117,7 +117,7 @@ export function renderGroupList(albumDatabase) {
     const specialCard = document.createElement('div');
     specialCard.className = 'group-card';
     specialCard.id = 'group-especiales';
-    specialCard.innerHTML = `<div class="group-header" onclick="openTeam('FWC', 'Sección Especial', true)">
+    specialCard.innerHTML = `<div class="group-header" data-action="open-team" data-team-code="FWC" data-team-name="Sección Especial" data-team-special="true">
         <div class="group-meta">
             <div>Sección Especial</div>
             <div class="group-acronyms">Lámina 00, FWC 1 - FWC 19</div>
@@ -134,7 +134,7 @@ export function renderGroupList(albumDatabase) {
         card.className = 'group-card';
         card.id = cardId;
         card.innerHTML = `
-            <div class="group-header" onclick="toggleGroup('${cardId}')">
+            <div class="group-header" data-action="toggle-group" data-group-id="${cardId}">
                 <div class="group-meta">
                     <div>${group.name}</div>
                     <div class="group-acronyms">${acronyms}</div>
@@ -143,7 +143,7 @@ export function renderGroupList(albumDatabase) {
             </div>
             <div class="group-content">
                 <div class="teams-grid">
-                    ${group.teams.map(team => `<button class="team-btn" onclick="openTeam('${team.code}', '${team.name}')"><span class="team-code">${team.code}</span><span>${team.name}</span></button>`).join('')}
+                    ${group.teams.map(team => `<button class="team-btn" data-action="open-team" data-team-code="${team.code}" data-team-name="${team.name}"><span class="team-code">${team.code}</span><span>${team.name}</span></button>`).join('')}
                 </div>
             </div>
         `;

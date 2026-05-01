@@ -2,7 +2,7 @@ import { persistAuthSession, registerUser } from "./services/authService.js";
 
     persistAuthSession().catch(e => console.error(e));
 
-    window.doRegister = async () => {
+    async function doRegister() {
         const email = document.getElementById('reg-email').value.trim();
         const pass  = document.getElementById('reg-pass').value;
         const pass2 = document.getElementById('reg-pass2').value;
@@ -48,4 +48,13 @@ import { persistAuthSession, registerUser } from "./services/authService.js";
                 msg.textContent = 'Error: ' + err.message;
             }
         }
-    };
+    }
+
+    document.getElementById('register-form')?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        doRegister();
+    });
+
+    document.getElementById('btn-back-login')?.addEventListener('click', () => {
+        window.location.href = 'index.html';
+    });
