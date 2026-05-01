@@ -34,6 +34,16 @@ Usa esta lista antes de subir cambios grandes o antes de mezclar a `master`.
 - Crear un grupo y confirmar que aparece una notificacion.
 - Probar `Marcar leidas` y `Limpiar`.
 
+## Canjes cerca
+
+- Abrir `Canjes Cerca`.
+- Activar ubicacion y aceptar el permiso del navegador.
+- Confirmar que aparece el mapa con tu zona aproximada.
+- Con otra cuenta, activar ubicacion cerca y tener laminas repetidas/faltantes compatibles.
+- Confirmar que aparece en el ranking con distancia aproximada y cantidad de canjes.
+- Enviar solicitud desde el ranking cercano.
+- Aceptar con la otra cuenta y probar el chat interno.
+
 ## Resumen
 
 - Abrir `Ver Resumen Detallado`.

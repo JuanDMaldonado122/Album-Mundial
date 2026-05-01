@@ -10,6 +10,7 @@ import { createTradeRequest, getUserTradeRequests, respondTradeRequest, sendChat
 import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists } from "./services/albumService.js";
 import { auth, db } from "./services/firebaseService.js";
 import { addFriendByEmail, addFriendToGroup, createFriendGroup, getFriendGroups, getFriendSummaries, getFriendTradeMatches, registerUserForFriendLookup } from "./services/friendsService.js";
+import { calculateDistanceKm, disableNearbyAvailability, getNearbyCollectors, saveNearbyAvailability } from "./services/nearbyService.js";
 import { addNotification, clearNotifications, formatNotificationTime, getNotifications, getUnreadNotificationCount, markAllNotificationsRead, markMilestoneNotified, wasMilestoneNotified } from "./services/notificationService.js";
 import { createStickerEl, filterTeams, openSummaryView, openTeamView, renderGroupList, switchSummaryTab, toggleGroup } from "./ui/albumView.js";
 import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
@@ -25,6 +26,10 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     let tradeRequestsById = {};
     let currentChat = null;
     let unsubscribeChat = null;
+    let nearbyMap = null;
+    let nearbyMarkers = [];
+    let nearbyCandidatesByUid = {};
+    let myNearbyLocation = null;
     window.smartProposalContext = null;
 
     /* === AUTHENTICATION LOGIC === */
@@ -406,6 +411,145 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         window.renderNotifications();
     };
 
+    function getCurrentPosition() {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error('Tu navegador no soporta ubicación.'));
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: false,
+                timeout: 10000,
+                maximumAge: 1000 * 60 * 5
+            });
+        });
+    }
+
+    function renderNearbyMap(candidates = []) {
+        const mapEl = document.getElementById('nearby-map');
+        if (!mapEl) return;
+
+        if (!window.L || !myNearbyLocation) {
+            mapEl.innerHTML = '<div class="nearby-map-empty">Activa tu ubicación para ver el mapa de canjes cerca.</div>';
+            return;
+        }
+
+        mapEl.innerHTML = '';
+        if (!nearbyMap) {
+            nearbyMap = window.L.map(mapEl, { zoomControl: false });
+            window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(nearbyMap);
+        }
+
+        nearbyMap.setView([myNearbyLocation.lat, myNearbyLocation.lng], 13);
+        nearbyMarkers.forEach(marker => marker.remove());
+        nearbyMarkers = [];
+
+        nearbyMarkers.push(window.L.marker([myNearbyLocation.lat, myNearbyLocation.lng])
+            .addTo(nearbyMap)
+            .bindPopup('Tu zona aproximada'));
+
+        candidates.forEach(candidate => {
+            const marker = window.L.marker([candidate.location.lat, candidate.location.lng])
+                .addTo(nearbyMap)
+                .bindPopup(`${candidate.email}<br>${candidate.matchCount} canjes posibles`);
+            nearbyMarkers.push(marker);
+        });
+
+        setTimeout(() => nearbyMap.invalidateSize(), 100);
+    }
+
+    function renderNearbyList(candidates = []) {
+        const listEl = document.getElementById('nearby-list');
+        if (!listEl) return;
+
+        if (!myNearbyLocation) {
+            listEl.innerHTML = '<div class="notification-empty">Activa tu ubicación para encontrar coleccionistas cerca.</div>';
+            return;
+        }
+
+        if (candidates.length === 0) {
+            listEl.innerHTML = '<div class="notification-empty">No hay coleccionistas cercanos activos todavía.</div>';
+            return;
+        }
+
+        listEl.className = 'nearby-list';
+        listEl.innerHTML = candidates.map(candidate => `
+            <div class="nearby-card">
+                <div class="nearby-card-title">${candidate.email}</div>
+                <div class="nearby-card-copy">Está a ${candidate.distanceKm.toFixed(1)} km aprox. Pueden hacer ${candidate.matchCount} canjes. Te puede dar ${candidate.iCanGet.length} y tú le puedes dar ${candidate.iCanGive.length}.</div>
+                ${candidate.matchCount > 0 ? `<button class="btn-trade" data-action="send-nearby-request" data-uid="${candidate.uid}">Enviar solicitud</button>` : ''}
+            </div>
+        `).join('');
+    }
+
+    async function refreshNearbyCandidates() {
+        const status = document.getElementById('nearby-status');
+        if (!currentUser || !myNearbyLocation) return;
+
+        status.textContent = 'Buscando coleccionistas cerca...';
+
+        const allStickers = window.getAllStickers();
+        const collectors = await getNearbyCollectors(currentUser);
+        const candidates = collectors.map(collector => {
+            const { iCanGet, iCanGive } = getFriendTradeMatches(allStickers, window.state, collector.state || {});
+            const matchCount = Math.min(iCanGet.length, iCanGive.length);
+
+            return {
+                ...collector,
+                iCanGet: iCanGet.slice(0, 8),
+                iCanGive: iCanGive.slice(0, 8),
+                matchCount,
+                distanceKm: calculateDistanceKm(myNearbyLocation, collector.location)
+            };
+        }).sort((a, b) => (b.matchCount - a.matchCount) || (a.distanceKm - b.distanceKm));
+
+        nearbyCandidatesByUid = Object.fromEntries(candidates.map(candidate => [candidate.uid, candidate]));
+        renderNearbyMap(candidates);
+        renderNearbyList(candidates);
+        status.textContent = candidates.length ? 'Ranking cercano actualizado.' : 'Tu zona quedó activa. Aún no hay coleccionistas cerca.';
+    }
+
+    window.openNearby = function() {
+        window.switchView('view-nearby');
+        renderNearbyMap();
+        renderNearbyList();
+    };
+
+    window.enableNearby = async function() {
+        const status = document.getElementById('nearby-status');
+        if (!currentUser) return;
+
+        status.textContent = 'Solicitando permiso de ubicación...';
+
+        try {
+            const position = await getCurrentPosition();
+            myNearbyLocation = await saveNearbyAvailability(currentUser, position.coords);
+            pushNotification({
+                title: 'Canjes cerca activado',
+                message: 'Tu zona aproximada ya aparece para encontrar canjes cercanos.',
+                type: 'nearby',
+                action: 'friends'
+            });
+            await refreshNearbyCandidates();
+        } catch (e) {
+            status.textContent = 'No se pudo obtener la ubicación. Revisa los permisos del navegador.';
+            renderNearbyMap();
+        }
+    };
+
+    window.disableNearby = async function() {
+        if (!currentUser) return;
+        await disableNearbyAvailability(currentUser);
+        myNearbyLocation = null;
+        nearbyCandidatesByUid = {};
+        document.getElementById('nearby-status').textContent = 'Tu ubicación para canjes cercanos quedó pausada.';
+        renderNearbyMap();
+        renderNearbyList();
+    };
+
     function bindStaticEvents() {
         if (document.body.dataset.eventsBound === 'true') return;
         document.body.dataset.eventsBound = 'true';
@@ -456,6 +600,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'logout': window.handleLogout,
                 'open-friends': window.openFriends,
                 'open-chat': (button) => window.openTradeChat(button.dataset.requestId),
+                'open-nearby': window.openNearby,
                 'open-pack': window.openPackMode,
                 'open-scanner': window.openScanner,
                 'open-share': () => window.switchView('view-share'),
@@ -467,6 +612,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'mark-notifications-read': window.markNotificationsRead,
                 'reject-trade-request': (button) => window.respondToTradeRequest(button.dataset.requestId, 'rejected'),
                 'send-chat-message': window.sendCurrentChatMessage,
+                'send-nearby-request': (button) => window.sendNearbyTradeRequest(button.dataset.uid),
                 'send-trade-request': window.sendInternalTradeRequest,
                 'share-card': window.shareCollectionCard,
                 'share-repeated': window.shareRepeated,
@@ -480,6 +626,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                     if (help) help.hidden = !help.hidden;
                 },
                 'clear-notifications': window.clearAllNotifications,
+                'disable-nearby': window.disableNearby,
+                'enable-nearby': window.enableNearby,
                 'toggle-group': (button) => window.toggleGroup(button.dataset.groupId)
             };
 
@@ -819,6 +967,33 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             window.openFriends();
         } catch (e) {
             alert('No se pudo enviar la solicitud. Revisa Firebase.');
+        }
+    };
+
+    window.sendNearbyTradeRequest = async function(uid) {
+        const candidate = nearbyCandidatesByUid[uid];
+        if (!currentUser || !candidate || candidate.matchCount === 0) return;
+
+        try {
+            await createTradeRequest({
+                currentUser,
+                targetUid: candidate.uid,
+                targetEmail: candidate.email,
+                proposal: {
+                    iCanGet: candidate.iCanGet,
+                    iCanGive: candidate.iCanGive
+                }
+            });
+
+            pushNotification({
+                title: 'Solicitud cercana enviada',
+                message: `Tu solicitud de canje para ${candidate.email} quedó pendiente.`,
+                type: 'nearby',
+                action: 'friends'
+            });
+            alert('Solicitud enviada. Si la otra persona acepta, se habilita el chat interno.');
+        } catch (e) {
+            alert('No se pudo enviar la solicitud cercana.');
         }
     };
 

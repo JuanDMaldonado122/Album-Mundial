@@ -30,6 +30,10 @@
     "chats": {
       ".read": "auth != null",
       ".write": "auth != null"
+    },
+    "nearbyCollectors": {
+      ".read": "auth != null",
+      ".write": "auth != null"
     }
   }
 }

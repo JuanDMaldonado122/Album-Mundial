@@ -12,8 +12,10 @@
     <link rel="icon" href="./assets/images/icon.png">
     <link rel="apple-touch-icon" href="./assets/images/icon.png">
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="./css/styles.css">
 </head>
 <body>
@@ -102,6 +104,10 @@
             Amigos y Canjes
         </button>
 
+        <button class="btn-secondary btn-flex" data-action="open-nearby" style="border-color: rgba(200,212,0,0.4); color: var(--fifa-lime); margin-top: 10px;">
+            Canjes Cerca
+        </button>
+
         <div class="solo-action-row">
             <div class="action-with-help">
                 <button class="btn-secondary btn-flex" data-action="open-pack">
@@ -143,6 +149,24 @@
             <button class="btn-secondary btn-flex" data-action="clear-notifications">Limpiar</button>
         </div>
         <div id="notification-list"></div>
+    </div>
+
+    <!-- NEARBY TRADES VIEW -->
+    <div id="view-nearby" class="view">
+        <div class="nav-bar">
+            <button class="btn-back" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <h2 class="nav-title">Canjes Cerca</h2>
+        </div>
+        <div class="friend-msg-box">
+            Activa tu zona aproximada para encontrar coleccionistas cerca. Nadie ve tu ubicación exacta; solo se usa para calcular distancia y posibles canjes.
+        </div>
+        <div class="nearby-actions">
+            <button class="btn-primary" data-action="enable-nearby">Activar ubicación</button>
+            <button class="btn-secondary" data-action="disable-nearby">Pausar</button>
+        </div>
+        <div id="nearby-status" class="mini-feedback"></div>
+        <div id="nearby-map" class="nearby-map"></div>
+        <div id="nearby-list"></div>
     </div>
 
     <!-- PACK MODE VIEW -->
