@@ -11,6 +11,7 @@
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        [hidden] { display: none !important; }
         body { 
             margin: 0; 
             font-family: 'Noto Sans', sans-serif; 
@@ -249,7 +250,7 @@
         }
         .teams-help { margin: 10px 0 0; }
         .inline-help strong { color: var(--text-main); }
-        .tool-help { display: grid; gap: 8px; }
+        .tool-help:not([hidden]) { display: grid; gap: 8px; }
         .inline-help span {
             color: var(--fifa-lime);
             font-weight: 900;
