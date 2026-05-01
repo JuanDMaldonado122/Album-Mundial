@@ -100,8 +100,9 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
             margin-bottom: 20px; 
         }
-        .home-toolbar { display: flex; justify-content: flex-end; margin-bottom: 14px; }
-        .notification-button {
+        .home-toolbar { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+        .notification-button,
+        .sound-button {
             position: relative;
             display: inline-flex;
             align-items: center;
@@ -117,7 +118,10 @@
             text-transform: uppercase;
             cursor: pointer;
         }
-        .notification-button:active { transform: scale(0.97); }
+        .sound-button { border-color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.055); color: var(--text-muted); }
+        .sound-button.is-active { border-color: rgba(200,212,0,0.42); background: rgba(200,212,0,0.14); color: var(--fifa-lime); }
+        .notification-button:active,
+        .sound-button:active { transform: scale(0.97); }
         .notification-badge {
             min-width: 20px;
             height: 20px;

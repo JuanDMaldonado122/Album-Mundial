@@ -12,6 +12,7 @@ import { auth, db } from "./services/firebaseService.js";
 import { addFriendByEmail, addFriendToGroup, createFriendGroup, getFriendGroups, getFriendSummaries, getFriendTradeMatches, getUserProfile, registerUserForFriendLookup, saveUserProfile } from "./services/friendsService.js";
 import { calculateDistanceKm, disableNearbyAvailability, getNearbyCollectors, saveNearbyAvailability } from "./services/nearbyService.js";
 import { addNotification, clearNotifications, formatNotificationTime, getNotifications, getUnreadNotificationCount, markAllNotificationsRead, markMilestoneNotified, wasMilestoneNotified } from "./services/notificationService.js";
+import { initMatchAudioControls, playUiSound, toggleMatchAudio } from "./services/audioService.js";
 import { createStickerEl, filterTeams, openSummaryView, openTeamView, renderGroupList, switchSummaryTab, toggleGroup } from "./ui/albumView.js";
 import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
@@ -330,8 +331,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.0</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.0</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.2</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.2</span>';
         }
         window.switchView('view-home', false);
         history.replaceState({ view: 'view-home' }, '', '#home');
@@ -692,6 +693,23 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             const actionButton = event.target.closest('[data-action]');
             if (!actionButton) return;
 
+            const soundByAction = {
+                'add-pack': 'success',
+                'execute-trade': 'trade',
+                'open-friends': 'nav',
+                'open-nearby': 'nav',
+                'open-notifications': 'nav',
+                'open-pack': 'nav',
+                'open-share': 'nav',
+                'open-summary': 'nav',
+                'open-team': 'sticker',
+                'open-trade': 'trade',
+                'save-display-name': 'success',
+                'send-nearby-request': 'trade',
+                'send-trade-request': 'trade',
+                'toggle-group': 'tap'
+            };
+
             const actions = {
                 'add-friend': window.addFriend,
                 'add-pack': window.addPackStickers,
@@ -731,6 +749,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                     const help = document.getElementById(button.dataset.helpTarget);
                     if (help) help.hidden = !help.hidden;
                 },
+                'toggle-audio': toggleMatchAudio,
                 'toggle-nearby-profile': (button) => {
                     if (event.target.closest('[data-action="send-nearby-request"]')) return;
                     const profile = document.getElementById(`nearby-profile-${button.dataset.uid}`);
@@ -743,6 +762,9 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'toggle-group': (button) => window.toggleGroup(button.dataset.groupId)
             };
 
+            if (actionButton.dataset.action !== 'toggle-audio') {
+                playUiSound(soundByAction[actionButton.dataset.action] || 'tap');
+            }
             actions[actionButton.dataset.action]?.(actionButton);
         });
     }
@@ -750,6 +772,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     // BOOTSTRAP INITIALIZATION
     window.onload = () => {
         bindStaticEvents();
+        initMatchAudioControls(document.getElementById('sound-toggle'));
 
         // Init SW 
         if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(e=>{});
