@@ -246,6 +246,7 @@
             margin: -8px 0 14px;
         }
         .inline-help strong { color: var(--text-main); }
+        .tool-help { display: grid; gap: 8px; }
         .inline-help span {
             color: var(--fifa-lime);
             font-weight: 900;
