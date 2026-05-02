@@ -537,8 +537,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.10</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.10</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.11</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.11</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
@@ -1352,6 +1352,62 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         return friendSummaries.filter(friend => memberIds.has(friend.uid));
     }
 
+    function getFriendInsights(friendSummaries, allStickers) {
+        return friendSummaries.map(friend => {
+            const { iCanGet, iCanGive } = getFriendTradeMatches(allStickers, window.state, friend.state || {});
+            const progress = Math.round((friend.totalOwned / allStickers.length) * 1000) / 10;
+
+            return {
+                ...friend,
+                iCanGet,
+                iCanGive,
+                balancedMatches: Math.min(iCanGet.length, iCanGive.length),
+                progress
+            };
+        });
+    }
+
+    function renderFriendGroupSummary({ activeGroupName, insights, ranking, allStickers }) {
+        const summaryEl = document.getElementById('friends-group-summary');
+        if (!summaryEl) return;
+
+        if (insights.length === 0) {
+            summaryEl.innerHTML = '';
+            return;
+        }
+
+        const bestFriend = insights.slice().sort((a, b) => b.totalOwned - a.totalOwned)[0];
+        const bestTrade = insights.slice().sort((a, b) => b.balancedMatches - a.balancedMatches || b.iCanGet.length - a.iCanGet.length)[0];
+        const totalCanGet = insights.reduce((total, friend) => total + friend.iCanGet.length, 0);
+        const topThree = ranking.slice(0, 3);
+
+        summaryEl.innerHTML = `
+            <section class="friends-social-panel">
+                <div class="social-panel-head">
+                    <div>
+                        <div class="insight-kicker">Grupo activo</div>
+                        <h3>${escapeHtml(activeGroupName)}</h3>
+                    </div>
+                    <div class="social-group-count">${insights.length} amigos</div>
+                </div>
+                <div class="social-stat-grid">
+                    <div class="social-stat"><strong>${escapeHtml(getDisplayName(bestFriend))}</strong><span>Lider del grupo</span></div>
+                    <div class="social-stat"><strong>${totalCanGet}</strong><span>Laminas que te pueden dar</span></div>
+                    <div class="social-stat"><strong>${bestTrade?.balancedMatches || 0}</strong><span>Mejor canje justo</span></div>
+                </div>
+                <div class="ranking-podium">
+                    ${topThree.map((item, index) => `
+                        <div class="podium-card rank-${index + 1}">
+                            <div class="podium-rank">#${index + 1}</div>
+                            <div class="podium-name">${escapeHtml(getDisplayName(item))}</div>
+                            <div class="podium-score">${item.totalOwned}/${allStickers.length}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </section>
+        `;
+    }
+
     function getRequestSummary(request) {
         const give = request.proposal?.iCanGive?.length || 0;
         const get = request.proposal?.iCanGet?.length || 0;
@@ -1493,6 +1549,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     window.renderFriends = async function() {
         if (!currentUser) return;
         const listEl = document.getElementById('friends-list');
+        const summaryEl = document.getElementById('friends-group-summary');
+        if (summaryEl) summaryEl.innerHTML = '';
         listEl.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:10px 0;">Cargando...</div>';
 
         try {
@@ -1523,35 +1581,65 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             }
 
             const myStats = getAlbumStats(window.state);
+            const friendInsights = getFriendInsights(visibleFriendSummaries, allStickers);
             const ranking = [
-                { displayName: currentProfile.displayName || 'Tu álbum', totalOwned: myStats.unique },
-                ...visibleFriendSummaries
+                {
+                    uid: currentUser.uid,
+                    displayName: currentProfile.displayName || 'Tu album',
+                    email: currentUser.email,
+                    totalOwned: myStats.unique,
+                    duplicateCount: myStats.duplicates,
+                    iCanGet: [],
+                    iCanGive: [],
+                    balancedMatches: 0,
+                    progress: Math.round((myStats.unique / allStickers.length) * 1000) / 10,
+                    isMe: true
+                },
+                ...friendInsights
             ].sort((a, b) => b.totalOwned - a.totalOwned);
+
+            renderFriendGroupSummary({ activeGroupName, insights: friendInsights, ranking, allStickers });
 
             listEl.innerHTML = `
                 <div class="insight-card">
-                    <div class="insight-kicker">Ranking: ${activeGroupName}</div>
-                    <div class="ranking-list">
-                        ${ranking.map((item, index) => `<div class="ranking-row"><span class="ranking-name">${index + 1}. ${escapeHtml(getDisplayName(item))}</span><span class="ranking-score">${item.totalOwned}</span></div>`).join('')}
-                    </div>
+                    <div class="insight-kicker">Ranking completo</div>
                 </div>
             `;
 
-            for (const friend of visibleFriendSummaries) {
+            ranking.forEach((friend, index) => {
                 const card = document.createElement('div');
-                card.className = 'friend-card';
+                const isMe = friend.isMe;
+                const progress = Math.min(friend.progress || 0, 100);
+                const helpCopy = isMe
+                    ? `${friend.duplicateCount || 0} repetidas disponibles para canjear`
+                    : friend.iCanGet.length > 0
+                        ? `Te puede ayudar con ${friend.iCanGet.length} laminas`
+                        : 'Por ahora no tiene repetidas que te falten';
+                const tradeCopy = isMe
+                    ? 'Tu progreso'
+                    : friend.balancedMatches > 0
+                        ? `${friend.balancedMatches} canjes justos`
+                        : `${friend.iCanGive.length} posibles para ofrecer`;
+
+                card.className = `friend-card social-friend-card ${isMe ? 'is-me' : ''}`;
                 card.innerHTML = `
+                    <div class="friend-rank">#${index + 1}</div>
                     <div class="friend-info">
                         <div class="friend-email">${escapeHtml(getDisplayName(friend))}</div>
-                        <div class="friend-stats">${friend.duplicateCount} repetidas&nbsp;&nbsp;-&nbsp;&nbsp;${friend.totalOwned} en total</div>
+                        <div class="friend-stats">${friend.totalOwned}/${allStickers.length} laminas - ${progress}% listo</div>
+                        <div class="friend-progress-track"><span style="width:${progress}%"></span></div>
+                        <div class="friend-help-copy">${escapeHtml(helpCopy)}</div>
                     </div>
-                    ${friend.matchCount > 0 ? `<div class="friend-match-badge">${friend.matchCount} canjes</div>` : ''}
-                    <svg class="friend-arrow" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                    <div class="friend-match-badge">${escapeHtml(tradeCopy)}</div>
+                    ${isMe ? '' : '<svg class="friend-arrow" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>'}
                 `;
-                card.addEventListener('click', () => window.viewFriendTrades(friend.uid, friend.email, friend.state, friend.displayName));
+                if (!isMe) {
+                    card.addEventListener('click', () => window.viewFriendTrades(friend.uid, friend.email, friend.state, friend.displayName));
+                }
                 listEl.appendChild(card);
-            }
+            });
         } catch(e) {
+            if (summaryEl) summaryEl.innerHTML = '';
             listEl.innerHTML = '<div class="friends-empty"><strong>Error</strong>No se pudieron cargar los amigos. Verifica las reglas de Firebase Database.</div>';
         }
     };

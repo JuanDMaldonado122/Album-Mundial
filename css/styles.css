@@ -838,9 +838,46 @@
             -webkit-tap-highlight-color: rgba(204,0,0,0.1);
         }
         .friend-card:active { background: rgba(204,0,0,0.06); border-color: var(--fifa-red); }
+        .social-friend-card {
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            gap: 12px;
+            align-items: center;
+        }
+        .social-friend-card.is-me {
+            border-color: rgba(200,212,0,0.32);
+            background: linear-gradient(135deg, rgba(200,212,0,0.08), rgba(255,255,255,0.04));
+            cursor: default;
+        }
+        .friend-rank {
+            min-width: 40px;
+            height: 40px;
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            color: var(--fifa-lime);
+            font-size: 13px;
+            font-weight: 900;
+            background: rgba(0,0,0,0.28);
+        }
         .friend-info { flex: 1; min-width: 0; }
         .friend-email { font-size: 14px; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .friend-stats { font-size: 12px; color: var(--text-muted); margin-top: 4px; letter-spacing: 0.5px; }
+        .friend-progress-track {
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.08);
+            overflow: hidden;
+            margin: 8px 0 6px;
+        }
+        .friend-progress-track span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--fifa-red), var(--fifa-lime));
+        }
+        .friend-help-copy { color: var(--text-muted); font-size: 11px; line-height: 1.35; }
         .friend-match-badge {
             background: var(--fifa-lime);
             color: #0A0A0A;
@@ -854,6 +891,83 @@
             text-transform: uppercase;
         }
         .friend-arrow { margin-left: 12px; stroke: var(--text-muted); }
+        .friends-social-panel {
+            border: 1px solid rgba(255,255,255,0.14);
+            background: linear-gradient(135deg, rgba(91,31,130,0.16), rgba(200,212,0,0.08)), rgba(255,255,255,0.04);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .social-panel-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+        .social-panel-head h3 {
+            margin: 0;
+            color: var(--text-main);
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 30px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 400;
+        }
+        .social-group-count {
+            border: 1px solid rgba(200,212,0,0.34);
+            color: var(--fifa-lime);
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: 900;
+            white-space: nowrap;
+            background: rgba(200,212,0,0.08);
+        }
+        .social-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+        .social-stat {
+            min-width: 0;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 10px 8px;
+            background: rgba(0,0,0,0.25);
+        }
+        .social-stat strong {
+            display: block;
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 900;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .social-stat span {
+            display: block;
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+        .ranking-podium { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .podium-card {
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 12px 8px;
+            text-align: center;
+            background: rgba(0,0,0,0.3);
+        }
+        .podium-card.rank-1 { border-color: rgba(200,212,0,0.42); box-shadow: 0 0 18px rgba(200,212,0,0.1); }
+        .podium-rank { color: var(--fifa-lime); font-weight: 900; font-size: 14px; }
+        .podium-name { color: var(--text-main); font-size: 12px; font-weight: 900; margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .podium-score { color: var(--text-muted); font-size: 11px; margin-top: 4px; }
+        @media (max-width: 520px) {
+            .social-stat-grid, .ranking-podium { grid-template-columns: 1fr; }
+            .social-friend-card { grid-template-columns: auto 1fr; }
+            .social-friend-card .friend-match-badge { grid-column: 2; justify-self: start; margin: 8px 0 0; }
+            .social-friend-card .friend-arrow { grid-column: 2; justify-self: end; margin-top: -32px; }
+        }
 
         /* Friend trades view */
         .match-section-title {
