@@ -7,7 +7,7 @@ import { executeManualTrade, openTradeView } from "./features/trade.js";
 import { addActivity } from "./services/activityService.js";
 import { loginUser, logoutUser, persistAuthSession, registerUser, watchAuthState } from "./services/authService.js";
 import { createTradeRequest, getUserTradeRequests, respondTradeRequest, sendChatMessage, watchChatMessages } from "./services/chatService.js";
-import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists } from "./services/albumService.js";
+import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists, getTeamStickers } from "./services/albumService.js";
 import { auth, db } from "./services/firebaseService.js";
 import { addFriendByEmail, addFriendToGroup, createFriendGroup, getFriendGroups, getFriendSummaries, getFriendTradeMatches, getUserProfile, registerUserForFriendLookup, saveUserProfile } from "./services/friendsService.js";
 import { calculateDistanceKm, disableNearbyAvailability, getNearbyCollectors, saveNearbyAvailability } from "./services/nearbyService.js";
@@ -33,6 +33,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     let nearbyMarkers = [];
     let nearbyCandidates = [];
     let nearbyCandidatesByUid = {};
+    let teamTradeCandidatesByUid = {};
     let myNearbyLocation = null;
     let suppressStickerAudio = false;
     let celebrationTimer = null;
@@ -536,8 +537,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.6</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.6</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.7</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.7</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
@@ -568,6 +569,151 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             updateSticker: window.updateSticker,
             switchView: window.switchView
         });
+    };
+
+    function buildTeamTradeProposal(candidate) {
+        const proposalSize = Math.min(candidate.iCanGet.length, candidate.iCanGive.length, 5);
+        if (proposalSize <= 0) return null;
+
+        return {
+            friendUid: candidate.uid,
+            friendEmail: candidate.email,
+            friendDisplayName: candidate.displayName || candidate.email,
+            teamName: candidate.teamName,
+            iCanGet: candidate.iCanGet.slice(0, proposalSize),
+            iCanGive: candidate.iCanGive.slice(0, proposalSize)
+        };
+    }
+
+    function getTeamTradeWhatsappMessage(candidate) {
+        const proposal = buildTeamTradeProposal(candidate);
+
+        if (proposal) {
+            return `Hola! Estoy completando ${candidate.teamName} en el álbum Mundial 2026.\n\nMe puedes ayudar con: ${proposal.iCanGet.join(', ')}\n\nYo te puedo dar: ${proposal.iCanGive.join(', ')}\n\n¿Hacemos ese canje?`;
+        }
+
+        return `Hola! Vi que podrías ayudarme con ${candidate.iCanGet.join(', ')} para completar ${candidate.teamName} en el álbum Mundial 2026.\n\n¿Te interesa revisar un canje conmigo?`;
+    }
+
+    function renderTeamTradeCandidates(teamName, missingTeam, candidates) {
+        const content = document.getElementById('friend-trades-content');
+        const missingPreview = missingTeam.slice(0, 10).join(', ');
+
+        if (missingTeam.length === 0) {
+            content.innerHTML = '<div class="friends-empty"><strong>Equipo completo</strong>Ya tienes todas las laminas de este equipo. Es momento de celebrar o ayudar a alguien mas.</div>';
+            return;
+        }
+
+        if (candidates.length === 0) {
+            content.innerHTML = `
+                <div class="friend-msg-box">Te faltan ${missingTeam.length} laminas de ${escapeHtml(teamName)}: ${escapeHtml(missingPreview)}${missingTeam.length > 10 ? '...' : ''}</div>
+                <div class="friends-empty"><strong>Sin matches por ahora</strong>Ningun amigo tiene repetidas de este equipo que te sirvan todavia. Cuando agreguen mas laminas, vuelve a buscar.</div>
+            `;
+            return;
+        }
+
+        content.innerHTML = `
+            <div class="friend-msg-box">Enfocado en ${escapeHtml(teamName)}: te faltan ${missingTeam.length} laminas. Ordenamos primero a quienes mas te pueden acercar a completarlo.</div>
+            ${candidates.map(candidate => {
+                const proposalSize = Math.min(candidate.iCanGet.length, candidate.iCanGive.length, 5);
+                const canRequest = proposalSize > 0;
+                const actionCopy = canRequest
+                    ? `${proposalSize} x ${proposalSize} listo para solicitar.`
+                    : 'Te puede ayudar, pero aun no tienes repetidas compatibles para ofrecerle.';
+
+                return `
+                    <div class="request-card team-trade-card">
+                        <div class="team-trade-top">
+                            <div>
+                                <div class="request-title">${escapeHtml(candidate.displayName || candidate.email)}</div>
+                                <div class="request-copy">${escapeHtml(actionCopy)}</div>
+                            </div>
+                            <div class="friend-match-badge">${candidate.iCanGet.length}</div>
+                        </div>
+                        <div class="match-give">
+                            <div class="match-section-title">Te puede dar</div>
+                            <div class="match-tags">${candidate.iCanGet.slice(0, 8).map(id => `<span class="match-tag give">${escapeHtml(id)}</span>`).join('')}</div>
+                        </div>
+                        ${candidate.iCanGive.length ? `
+                            <div class="match-take">
+                                <div class="match-section-title">Tu le puedes dar</div>
+                                <div class="match-tags">${candidate.iCanGive.slice(0, 8).map(id => `<span class="match-tag take">${escapeHtml(id)}</span>`).join('')}</div>
+                            </div>
+                        ` : ''}
+                        <div class="request-actions">
+                            ${canRequest ? `<button class="btn-trade" data-action="send-team-trade-request" data-uid="${candidate.uid}">Solicitud interna</button>` : '<button class="btn-secondary" disabled>Sin propuesta justa</button>'}
+                            <button class="btn-secondary" data-action="team-trade-whatsapp" data-uid="${candidate.uid}">WhatsApp</button>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        `;
+    }
+
+    window.openTeamTrades = async function() {
+        if (!currentUser || !window.currentTeamContext) return;
+
+        const { code, name, isSpecial } = window.currentTeamContext;
+        const allStickers = window.getAllStickers();
+        const teamStickers = getTeamStickers(window.DB, code, isSpecial);
+        const missingTeam = teamStickers.filter(id => (window.state[id] || 0) === 0);
+        const myDuplicates = allStickers.filter(id => (window.state[id] || 0) > 1);
+        const title = document.getElementById('friend-trade-title');
+        const content = document.getElementById('friend-trades-content');
+        const backButton = document.querySelector('#view-friend-trades .btn-back');
+
+        if (title) title.textContent = `CANJES ${name}`.toUpperCase();
+        if (backButton) {
+            backButton.dataset.action = 'open-team';
+            backButton.dataset.teamCode = code;
+            backButton.dataset.teamName = name;
+            backButton.dataset.teamSpecial = isSpecial ? 'true' : 'false';
+        }
+        window.switchView('view-friend-trades');
+        content.innerHTML = '<div class="friends-empty"><strong>Buscando matches</strong>Estamos revisando tus amigos para encontrar canjes utiles para este equipo.</div>';
+
+        try {
+            const friends = await getFriendSummaries(currentUser, allStickers, window.state);
+            const candidates = friends.map(friend => {
+                const iCanGet = missingTeam.filter(id => (friend.state?.[id] || 0) > 1);
+                const iCanGive = myDuplicates.filter(id => (friend.state?.[id] || 0) === 0);
+
+                return {
+                    ...friend,
+                    teamName: name,
+                    iCanGet,
+                    iCanGive,
+                    proposalSize: Math.min(iCanGet.length, iCanGive.length, 5)
+                };
+            }).filter(candidate => candidate.iCanGet.length > 0)
+              .sort((a, b) => b.proposalSize - a.proposalSize || b.iCanGet.length - a.iCanGet.length);
+
+            teamTradeCandidatesByUid = Object.fromEntries(candidates.map(candidate => [candidate.uid, candidate]));
+            renderTeamTradeCandidates(name, missingTeam, candidates);
+        } catch (e) {
+            content.innerHTML = '<div class="friends-empty"><strong>Error</strong>No se pudieron cargar los matches. Revisa las reglas de Firebase Database.</div>';
+        }
+    };
+
+    window.sendTeamTradeRequest = async function(uid) {
+        const candidate = teamTradeCandidatesByUid[uid];
+        const proposal = candidate ? buildTeamTradeProposal(candidate) : null;
+
+        if (!proposal) {
+            alert('Todavia no hay una propuesta equilibrada para enviar solicitud interna.');
+            return;
+        }
+
+        window.smartProposalContext = proposal;
+        await window.sendInternalTradeRequest();
+    };
+
+    window.sendTeamTradeWhatsapp = function(uid) {
+        const candidate = teamTradeCandidatesByUid[uid];
+        if (!candidate) return;
+
+        const msg = getTeamTradeWhatsappMessage(candidate);
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
     };
 
     window.openSummary = function() {
@@ -983,8 +1129,11 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'open-share': 'nav',
                 'open-summary': 'nav',
                 'open-trade': 'trade',
+                'open-team-trades': 'trade',
                 'send-nearby-request': 'trade',
+                'send-team-trade-request': 'trade',
                 'send-trade-request': 'trade',
+                'team-trade-whatsapp': 'trade',
                 'toggle-group': 'tap'
             };
 
@@ -1009,6 +1158,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'open-notifications': window.openNotifications,
                 'open-profile': window.openProfile,
                 'open-team': (button) => window.openTeam(button.dataset.teamCode, button.dataset.teamName, button.dataset.teamSpecial === 'true'),
+                'open-team-trades': window.openTeamTrades,
                 'open-trade': window.openTrade,
                 'open-whatsapp': (button) => window.open(button.dataset.url, '_blank'),
                 'mark-notifications-read': window.markNotificationsRead,
@@ -1017,10 +1167,12 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'save-profile': window.saveProfile,
                 'send-chat-message': window.sendCurrentChatMessage,
                 'send-nearby-request': (button) => window.sendNearbyTradeRequest(button.dataset.uid),
+                'send-team-trade-request': (button) => window.sendTeamTradeRequest(button.dataset.uid),
                 'send-trade-request': window.sendInternalTradeRequest,
                 'share-card': window.shareCollectionCard,
                 'share-repeated': window.shareRepeated,
                 'smart-proposal': window.sendSmartProposal,
+                'team-trade-whatsapp': (button) => window.sendTeamTradeWhatsapp(button.dataset.uid),
                 'switch-friend-group': (button) => {
                     activeFriendGroupId = button.dataset.groupId || 'all';
                     window.renderFriends();
@@ -1307,6 +1459,13 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     };
     window.viewFriendTrades = function(fUid, fEmail, fState, fDisplayName = '') {
         document.getElementById('friend-trade-title').textContent = (fDisplayName || fEmail.split('@')[0]).toUpperCase();
+        const backButton = document.querySelector('#view-friend-trades .btn-back');
+        if (backButton) {
+            backButton.dataset.action = 'open-friends';
+            delete backButton.dataset.teamCode;
+            delete backButton.dataset.teamName;
+            delete backButton.dataset.teamSpecial;
+        }
         window.switchView('view-friend-trades');
 
         const allStickers = window.getAllStickers();

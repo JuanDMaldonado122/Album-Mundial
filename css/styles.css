@@ -437,6 +437,7 @@
         .team-mini-stats div { min-width: 0; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 8px; background: rgba(0,0,0,0.26); text-align: center; }
         .team-mini-stats strong { display: block; color: var(--text-main); font-size: 17px; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .team-mini-stats span { display: block; color: var(--text-muted); font-size: 10px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin-top: 3px; }
+        .team-trade-search { margin: 14px 0 0; padding: 14px 12px; font-size: 12px; box-shadow: 0 8px 22px rgba(91,31,130,0.22); }
         .team-filter-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0 0 12px; }
         .team-filter-btn { min-width: 0; border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.035); color: var(--text-muted); border-radius: 8px; padding: 11px 8px; font-size: 11px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
         .team-filter-btn.active { border-color: rgba(200,212,0,0.7); background: rgba(200,212,0,0.14); color: var(--fifa-lime); box-shadow: 0 0 18px rgba(200,212,0,0.14); }
@@ -872,8 +873,10 @@
         .request-card.pending { border-left-color: var(--fifa-red); }
         .request-title { color: var(--text-main); font-size: 14px; font-weight: 900; margin-bottom: 4px; }
         .request-copy { color: var(--text-muted); font-size: 12px; line-height: 1.5; margin-bottom: 12px; }
+        .team-trade-top { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; }
         .request-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .request-actions .btn-secondary, .request-actions .btn-trade { margin: 0; padding: 12px 10px; font-size: 12px; }
+        .request-actions .btn-secondary:disabled { opacity: 0.45; cursor: not-allowed; }
         .chat-messages {
             display: grid;
             gap: 10px;
