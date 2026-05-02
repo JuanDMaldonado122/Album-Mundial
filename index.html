@@ -63,7 +63,7 @@
     <div id="view-home" class="view">
         <header>
             <h1>Álbum 26</h1>
-            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.4</span></p>
+            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.5</span></p>
         </header>
 
         <div class="stats-dashboard">
@@ -106,6 +106,17 @@
                 <span class="user-badge" data-action="logout">Cerrar Sesión</span>
             </div>
         </div>
+
+        <section class="achievement-panel" id="achievement-panel">
+            <div class="achievement-header">
+                <div>
+                    <div class="achievement-kicker">Misiones</div>
+                    <h2>Camino al Mundial</h2>
+                </div>
+                <div class="achievement-score" id="achievement-score">0/0</div>
+            </div>
+            <div class="achievement-list" id="achievement-list"></div>
+        </section>
 
         <button class="btn-trade btn-flex" data-action="open-trade" style="margin-top:8px;">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -422,6 +433,16 @@
         </div>
     </div>
 
+</div>
+
+<div class="celebration-overlay" id="celebration-overlay" hidden>
+    <div class="celebration-card">
+        <div class="celebration-burst"></div>
+        <div class="celebration-kicker">Logro desbloqueado</div>
+        <h2 id="celebration-title">Equipo completo</h2>
+        <p id="celebration-message">Acabas de completar una seccion del album.</p>
+        <button class="btn-primary" data-action="close-celebration">Seguir llenando</button>
+    </div>
 </div>
 
 <!-- Floating Action Button -->

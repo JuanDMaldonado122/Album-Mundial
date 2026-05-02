@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mundial-26-cache-v35';
+const CACHE_NAME = 'mundial-26-cache-v36';
 const urlsToCache = [
   './',
   './index.html',
@@ -15,6 +15,7 @@ const urlsToCache = [
   './js/features/shareCard.js',
   './js/features/trade.js',
   './js/services/activityService.js',
+  './js/services/achievementService.js',
   './js/services/audioService.js',
   './js/services/authService.js',
   './js/services/albumService.js',

@@ -13,6 +13,7 @@ import { addFriendByEmail, addFriendToGroup, createFriendGroup, getFriendGroups,
 import { calculateDistanceKm, disableNearbyAvailability, getNearbyCollectors, saveNearbyAvailability } from "./services/nearbyService.js";
 import { addNotification, clearNotifications, formatNotificationTime, getNotifications, getUnreadNotificationCount, markAllNotificationsRead, markMilestoneNotified, wasMilestoneNotified } from "./services/notificationService.js";
 import { initMatchAudioControls, playUiSound, toggleMatchAudio } from "./services/audioService.js";
+import { getAchievementDashboard, getTeamForSticker, isTeamComplete } from "./services/achievementService.js";
 import { createStickerEl, filterTeams, openSummaryView, openTeamView, renderGroupList, switchSummaryTab, toggleGroup } from "./ui/albumView.js";
 import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
@@ -34,6 +35,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     let nearbyCandidatesByUid = {};
     let myNearbyLocation = null;
     let suppressStickerAudio = false;
+    let celebrationTimer = null;
     window.smartProposalContext = null;
 
     /* === AUTHENTICATION LOGIC === */
@@ -289,10 +291,101 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         }
     }
 
+    function showCelebration(title, message) {
+        const overlay = document.getElementById('celebration-overlay');
+        if (!overlay) return;
+
+        document.getElementById('celebration-title').textContent = title;
+        document.getElementById('celebration-message').textContent = message;
+        overlay.hidden = false;
+        overlay.classList.add('show');
+        playUiSound('packGoal');
+
+        window.clearTimeout(celebrationTimer);
+        celebrationTimer = window.setTimeout(window.closeCelebration, 5200);
+    }
+
+    window.closeCelebration = function() {
+        const overlay = document.getElementById('celebration-overlay');
+        if (!overlay) return;
+        overlay.classList.remove('show');
+        overlay.hidden = true;
+        window.clearTimeout(celebrationTimer);
+    };
+
+    function maybeCelebrateTeamCompletion(stickerId, previousState) {
+        if (!currentUser || !stickerId) return false;
+
+        const team = getTeamForSticker(window.DB, stickerId);
+        if (!team) return false;
+
+        const wasComplete = isTeamComplete(window.DB, previousState, team);
+        const isComplete = isTeamComplete(window.DB, window.state, team);
+        if (!wasComplete && isComplete) {
+            const title = `${team.name} completo`;
+            const message = `Brutal. Ya tienes todas las laminas de ${team.name}.`;
+            showCelebration(title, message);
+            pushNotification({
+                title,
+                message,
+                type: 'achievement',
+                action: 'summary'
+            });
+            return true;
+        }
+
+        return false;
+    }
+
+    function renderAchievements() {
+        const list = document.getElementById('achievement-list');
+        const score = document.getElementById('achievement-score');
+        if (!list || !score) return;
+
+        const dashboard = getAchievementDashboard(window.DB, window.state);
+        score.textContent = `${dashboard.completedCount}/${dashboard.totalCount}`;
+
+        const cards = [
+            ...dashboard.activeMissions.map(item => ({
+                title: item.title,
+                detail: item.detail,
+                meta: `${item.progress}/${item.target}`,
+                percentage: item.percentage,
+                completed: false
+            })),
+            ...dashboard.nextTeams.map(team => ({
+                title: `Casi completas ${team.name}`,
+                detail: `${team.owned} de ${team.total} laminas listas.`,
+                meta: `${team.percentage}%`,
+                percentage: team.percentage,
+                completed: false
+            }))
+        ].slice(0, 4);
+
+        if (cards.length === 0) {
+            list.innerHTML = '<div class="achievement-empty">Agrega laminas para desbloquear misiones y celebraciones.</div>';
+            return;
+        }
+
+        list.innerHTML = cards.map(card => `
+            <div class="achievement-card ${card.completed ? 'complete' : ''}">
+                <div class="achievement-card-top">
+                    <div>
+                        <div class="achievement-title">${escapeHtml(card.title)}</div>
+                        <div class="achievement-detail">${escapeHtml(card.detail)}</div>
+                    </div>
+                    <div class="achievement-meta">${escapeHtml(card.meta)}</div>
+                </div>
+                <div class="achievement-progress"><span style="width:${Math.min(card.percentage, 100)}%"></span></div>
+            </div>
+        `).join('');
+    }
+
     window.updateSticker = function(id, delta) {
         if (!currentUser || !stateRef) return;
 
         const previousStats = getAlbumStats(window.state);
+        const previousState = { ...window.state };
         const newVal = (window.state[id] || 0) + delta;
         if (newVal < 0) return; 
         
@@ -308,9 +401,13 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             });
         }
         maybeNotifyProgressMilestone(previousStats, getAlbumStats(window.state));
+        const playedCelebration = delta > 0 && maybeCelebrateTeamCompletion(id, previousState);
         if (!suppressStickerAudio) {
-            if (delta > 0) playUiSound(newVal > 1 ? 'duplicate' : 'goal');
-            else playUiSound('tap');
+            if (delta > 0) {
+                if (!playedCelebration) playUiSound(newVal > 1 ? 'duplicate' : 'goal');
+            } else {
+                playUiSound('tap');
+            }
         }
         localStorage.setItem(`album-2026-${currentUser.uid}`, JSON.stringify(window.state));
         refreshLocalUI();
@@ -339,6 +436,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         document.getElementById('stat-pct').innerText = `${stats.percentage}% Listo`;
         document.getElementById('progress-bar').style.width = `${stats.percentage}%`;
         window.renderNotificationBadge();
+        renderAchievements();
     };
 
     window.shareWsp = function() {
@@ -438,8 +536,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.4</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.4</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.5</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.5</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
@@ -938,6 +1036,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                     if (profile) profile.hidden = !profile.hidden;
                 },
                 'clear-notifications': window.clearAllNotifications,
+                'close-celebration': window.closeCelebration,
                 'disable-nearby': window.disableNearby,
                 'enable-nearby': window.enableNearby,
                 'enable-nearby-demo': window.enableNearbyDemo,
