@@ -537,8 +537,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.7</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.7</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.8</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.8</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
@@ -1133,6 +1133,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'send-nearby-request': 'trade',
                 'send-team-trade-request': 'trade',
                 'send-trade-request': 'trade',
+                'share-friend-invite': 'trade',
                 'team-trade-whatsapp': 'trade',
                 'toggle-group': 'tap'
             };
@@ -1143,6 +1144,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'accept-trade-request': (button) => window.respondToTradeRequest(button.dataset.requestId, 'accepted'),
                 'capture-scan': window.captureAndScan,
                 'close-scanner': window.closeScanner,
+                'copy-friend-invite': window.copyFriendInvite,
                 'create-friend-group': window.createFriendGroupFromInput,
                 'execute-trade': window.executeTrade,
                 'go-home': window.goHome,
@@ -1170,6 +1172,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'send-team-trade-request': (button) => window.sendTeamTradeRequest(button.dataset.uid),
                 'send-trade-request': window.sendInternalTradeRequest,
                 'share-card': window.shareCollectionCard,
+                'share-friend-invite': window.shareFriendInvite,
                 'share-repeated': window.shareRepeated,
                 'smart-proposal': window.sendSmartProposal,
                 'team-trade-whatsapp': (button) => window.sendTeamTradeWhatsapp(button.dataset.uid),
@@ -1224,6 +1227,62 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     window.openFriends = function() {
         window.switchView('view-friends');
         window.renderFriends();
+    };
+
+    function getFriendInviteUrl() {
+        const url = new URL(window.location.href);
+        url.hash = 'home';
+        url.search = '';
+        return url.toString();
+    }
+
+    function getFriendInviteMessage() {
+        const name = currentProfile.displayName || currentUser?.email || 'un coleccionista';
+        const email = currentUser?.email || '';
+
+        return `Hola! Soy ${name} y estoy llenando mi álbum Mundial 2026 en esta app. Quiero comparar canjes contigo.\n\nEntra aquí:\n${getFriendInviteUrl()}\n\nCuando te registres, agrégame con este correo:\n${email}\n\nAsí vemos qué láminas nos faltan, repetidas y posibles canjes.`;
+    }
+
+    function setInviteStatus(message, ok = true) {
+        const status = document.getElementById('friend-invite-status');
+        if (!status) return;
+
+        status.className = ok ? 'mini-feedback ok' : 'mini-feedback err';
+        status.textContent = message;
+        setTimeout(() => {
+            status.className = 'mini-feedback';
+            status.textContent = '';
+        }, 3200);
+    }
+
+    window.shareFriendInvite = function() {
+        if (!currentUser) return;
+        const msg = getFriendInviteMessage();
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+    };
+
+    window.copyFriendInvite = async function() {
+        if (!currentUser) return;
+        const msg = getFriendInviteMessage();
+
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(msg);
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = msg;
+                textarea.setAttribute('readonly', '');
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                textarea.remove();
+            }
+            setInviteStatus('Invitación copiada. Ya puedes pegarla en WhatsApp o donde quieras.');
+        } catch (e) {
+            setInviteStatus('No se pudo copiar. Usa el botón de WhatsApp.', false);
+        }
     };
 
     function renderFriendGroupControls() {

@@ -546,6 +546,8 @@
         .pack-input { width: 100%; min-height: 180px; resize: vertical; border: 1px solid var(--border-color); border-radius: 6px; background: rgba(0,0,0,0.45); color: var(--text-main); padding: 16px; font: inherit; font-weight: 700; line-height: 1.6; outline: none; margin-bottom: 14px; }
         .pack-input:focus { border-color: var(--fifa-lime); box-shadow: 0 0 0 2px rgba(200,212,0,0.12); }
         .mini-feedback { color: var(--text-muted); font-size: 13px; line-height: 1.5; margin-top: 12px; }
+        .mini-feedback.ok { color: var(--fifa-lime); }
+        .mini-feedback.err { color: #ff4444; }
         .ranking-list, .activity-list { display: grid; gap: 8px; margin-top: 10px; }
         .ranking-row, .activity-row { display: flex; justify-content: space-between; gap: 12px; align-items: center; background: rgba(0,0,0,0.32); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 12px; font-size: 13px; }
         .ranking-name, .activity-main { color: var(--text-main); font-weight: 800; overflow-wrap: anywhere; }
@@ -788,6 +790,26 @@
             transition: opacity 0.15s;
         }
         .btn-add-friend:active { opacity: 0.8; }
+
+        .friend-invite-card {
+            border: 1px solid rgba(200,212,0,0.24);
+            background: linear-gradient(135deg, rgba(200,212,0,0.1), rgba(91,31,130,0.14)), rgba(255,255,255,0.04);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 18px;
+        }
+        .invite-kicker {
+            color: var(--fifa-lime);
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 1.6px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .invite-title { color: var(--text-main); font-size: 16px; font-weight: 900; margin-bottom: 4px; }
+        .invite-copy { color: var(--text-muted); font-size: 12px; line-height: 1.45; }
+        .invite-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+        .invite-actions .btn-trade, .invite-actions .btn-secondary { margin: 0; padding: 13px 10px; font-size: 12px; }
 
         .friend-card {
             background: var(--card-bg);
