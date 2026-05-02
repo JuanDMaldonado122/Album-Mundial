@@ -63,7 +63,7 @@
     <div id="view-home" class="view">
         <header>
             <h1>Álbum 26</h1>
-            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.3</span></p>
+            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.4</span></p>
         </header>
 
         <div class="stats-dashboard">
@@ -71,6 +71,10 @@
                 <button class="sound-button" id="sound-toggle" type="button" data-action="toggle-audio" aria-label="Activar sonidos" aria-pressed="false">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                     <span data-audio-label>Sonido Off</span>
+                </button>
+                <button class="profile-button" type="button" data-action="open-profile" aria-label="Editar perfil">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>Perfil</span>
                 </button>
                 <button class="notification-button" type="button" data-action="open-notifications" aria-label="Ver notificaciones">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -158,6 +162,42 @@
         </div>
         </div>
 
+    <!-- PROFILE VIEW -->
+    <div id="view-profile" class="view">
+        <div class="nav-bar">
+            <button class="btn-back" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <h2 class="nav-title">Mi Perfil</h2>
+        </div>
+        <div class="profile-card">
+            <div class="profile-avatar" id="profile-avatar">A</div>
+            <div>
+                <div class="profile-title" id="profile-preview-name">Coleccionista</div>
+                <div class="profile-subtitle" id="profile-preview-meta">Listo para canjear</div>
+            </div>
+        </div>
+        <div class="profile-form">
+            <label>Apodo visible</label>
+            <input type="text" id="profile-display-name" placeholder="Ej: Familia Torres" maxlength="32" autocomplete="nickname">
+            <label>Ciudad</label>
+            <input type="text" id="profile-city" placeholder="Ej: Bogotá" maxlength="32" autocomplete="address-level2">
+            <label>Zona o barrio aproximado</label>
+            <input type="text" id="profile-zone" placeholder="Ej: Cedritos, norte, campus..." maxlength="42">
+            <label>Equipo favorito</label>
+            <input type="text" id="profile-favorite-team" placeholder="Ej: Colombia" maxlength="32">
+            <label>Estilo de canje</label>
+            <select id="profile-trade-style">
+                <option value="flexible">Flexible</option>
+                <option value="quick">Rápido y directo</option>
+                <option value="collector">Coleccionista cuidadoso</option>
+                <option value="family">Plan familiar</option>
+            </select>
+            <label>Frase para otros coleccionistas</label>
+            <textarea id="profile-bio" placeholder="Ej: Me encantan los canjes justos y rápidos." maxlength="120"></textarea>
+            <button class="btn-primary" data-action="save-profile">Guardar Perfil</button>
+            <div id="profile-edit-status" class="mini-feedback"></div>
+        </div>
+    </div>
+
     <!-- NOTIFICATIONS VIEW -->
     <div id="view-notifications" class="view">
         <div class="nav-bar">
@@ -184,6 +224,22 @@
             <button class="btn-primary" data-action="enable-nearby">Activar ubicación</button>
             <button class="btn-secondary" data-action="disable-nearby">Pausar</button>
             <button class="btn-secondary" data-action="enable-nearby-demo">Probar mapa</button>
+        </div>
+        <div class="nearby-filter-panel">
+            <label for="nearby-distance-filter">Distancia</label>
+            <select id="nearby-distance-filter">
+                <option value="999">Todos</option>
+                <option value="2">Hasta 2 km</option>
+                <option value="5">Hasta 5 km</option>
+                <option value="10">Hasta 10 km</option>
+            </select>
+            <label for="nearby-min-matches-filter">Canjes mínimos</label>
+            <select id="nearby-min-matches-filter">
+                <option value="0">Cualquier cantidad</option>
+                <option value="1">1 o más</option>
+                <option value="3">3 o más</option>
+                <option value="5">5 o más</option>
+            </select>
         </div>
         <div id="nearby-status" class="mini-feedback"></div>
         <div id="nearby-map" class="nearby-map"></div>

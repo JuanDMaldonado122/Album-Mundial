@@ -30,6 +30,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     let unsubscribeChat = null;
     let nearbyMap = null;
     let nearbyMarkers = [];
+    let nearbyCandidates = [];
     let nearbyCandidatesByUid = {};
     let myNearbyLocation = null;
     let suppressStickerAudio = false;
@@ -152,8 +153,9 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         status.textContent = 'Guardando...';
 
         try {
-            await saveUserProfile(currentUser, { displayName });
-            currentProfile = { ...currentProfile, displayName, email: currentUser.email };
+            const profile = { ...currentProfile, displayName };
+            await saveUserProfile(currentUser, profile);
+            currentProfile = { ...profile, email: currentUser.email };
             pushNotification({
                 title: `Bienvenido, ${displayName}`,
                 message: 'Tu perfil quedó listo para rankings, canjes y solicitudes.',
@@ -163,6 +165,99 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             window.goHome();
         } catch (e) {
             status.textContent = 'No se pudo guardar el nombre. Revisa Firebase.';
+        }
+    };
+
+    function getProfileFormData() {
+        return {
+            displayName: document.getElementById('profile-display-name')?.value.trim() || '',
+            city: document.getElementById('profile-city')?.value.trim() || '',
+            zone: document.getElementById('profile-zone')?.value.trim() || '',
+            favoriteTeam: document.getElementById('profile-favorite-team')?.value.trim() || '',
+            tradeStyle: document.getElementById('profile-trade-style')?.value || 'flexible',
+            bio: document.getElementById('profile-bio')?.value.trim() || ''
+        };
+    }
+
+    function getTradeStyleLabel(value = 'flexible') {
+        return {
+            flexible: 'Flexible',
+            quick: 'Rápido y directo',
+            collector: 'Coleccionista cuidadoso',
+            family: 'Plan familiar'
+        }[value] || 'Flexible';
+    }
+
+    function fillProfileForm() {
+        const profile = currentProfile || {};
+        const displayName = profile.displayName || '';
+        const city = profile.city || '';
+        const zone = profile.zone || '';
+        const favoriteTeam = profile.favoriteTeam || '';
+        const tradeStyle = profile.tradeStyle || 'flexible';
+        const bio = profile.bio || '';
+
+        const setValue = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.value = value;
+        };
+
+        setValue('profile-display-name', displayName);
+        setValue('profile-city', city);
+        setValue('profile-zone', zone);
+        setValue('profile-favorite-team', favoriteTeam);
+        setValue('profile-trade-style', tradeStyle);
+        setValue('profile-bio', bio);
+
+        const previewName = document.getElementById('profile-preview-name');
+        const previewMeta = document.getElementById('profile-preview-meta');
+        const avatar = document.getElementById('profile-avatar');
+        if (previewName) previewName.textContent = displayName || 'Coleccionista';
+        if (avatar) avatar.textContent = (displayName || currentUser?.email || 'A').slice(0, 1).toUpperCase();
+        if (previewMeta) {
+            const parts = [city, zone, favoriteTeam ? `Hincha de ${favoriteTeam}` : '', getTradeStyleLabel(tradeStyle)].filter(Boolean);
+            previewMeta.textContent = parts.join(' - ') || 'Listo para canjear';
+        }
+    }
+
+    window.openProfile = function() {
+        fillProfileForm();
+        document.getElementById('profile-edit-status').textContent = '';
+        window.switchView('view-profile');
+    };
+
+    window.saveProfile = async function() {
+        if (!currentUser) return;
+
+        const status = document.getElementById('profile-edit-status');
+        const profile = getProfileFormData();
+
+        if (profile.displayName.length < 2) {
+            status.textContent = 'El apodo debe tener al menos 2 caracteres.';
+            return;
+        }
+
+        if (profile.bio.length > 120) {
+            status.textContent = 'La frase debe tener máximo 120 caracteres.';
+            return;
+        }
+
+        status.textContent = 'Guardando perfil...';
+
+        try {
+            await saveUserProfile(currentUser, profile);
+            currentProfile = { ...profile, email: currentUser.email };
+            status.textContent = 'Perfil actualizado. Ahora tus canjes cercanos tienen más personalidad.';
+            playUiSound('tap');
+            fillProfileForm();
+            if (myNearbyLocation) {
+                await saveNearbyAvailability(currentUser, {
+                    latitude: myNearbyLocation.lat,
+                    longitude: myNearbyLocation.lng
+                }, currentProfile);
+            }
+        } catch (e) {
+            status.textContent = 'No se pudo guardar el perfil. Revisa Firebase.';
         }
     };
 
@@ -343,8 +438,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.3</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.3</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.4</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.4</span>';
         }
         window.switchView('view-home', false);
         history.replaceState({ view: 'view-home' }, '', '#home');
@@ -508,6 +603,41 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         return 'No se pudo obtener la ubicación. Revisa los permisos del navegador o usa Probar mapa para validar el flujo.';
     }
 
+    function getNearbyFilters() {
+        return {
+            maxDistance: Number(document.getElementById('nearby-distance-filter')?.value || 999),
+            minMatches: Number(document.getElementById('nearby-min-matches-filter')?.value || 0)
+        };
+    }
+
+    function getNearbyLocationLabel(candidate = {}) {
+        return [candidate.city, candidate.zone].filter(Boolean).join(' - ');
+    }
+
+    function getNearbyProfilePills(candidate = {}) {
+        return [
+            getNearbyLocationLabel(candidate),
+            candidate.favoriteTeam ? `Hincha de ${candidate.favoriteTeam}` : '',
+            getTradeStyleLabel(candidate.tradeStyle)
+        ].filter(Boolean);
+    }
+
+    function getFilteredNearbyCandidates() {
+        const filters = getNearbyFilters();
+        return nearbyCandidates.filter(candidate =>
+            candidate.distanceKm <= filters.maxDistance &&
+            candidate.matchCount >= filters.minMatches
+        );
+    }
+
+    function renderFilteredNearbyCandidates() {
+        const filtered = getFilteredNearbyCandidates();
+        nearbyCandidatesByUid = Object.fromEntries(filtered.map(candidate => [candidate.uid, candidate]));
+        renderNearbyMap(filtered);
+        renderNearbyList(filtered);
+        return filtered;
+    }
+
     function renderNearbyMap(candidates = []) {
         const mapEl = document.getElementById('nearby-map');
         if (!mapEl) return;
@@ -554,21 +684,31 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         }
 
         if (candidates.length === 0) {
-            listEl.innerHTML = '<div class="notification-empty">No hay coleccionistas cercanos activos todavía.</div>';
+            listEl.innerHTML = nearbyCandidates.length
+                ? '<div class="notification-empty">No hay coleccionistas que coincidan con esos filtros.</div>'
+                : '<div class="notification-empty">No hay coleccionistas cercanos activos todavía.</div>';
             return;
         }
 
         listEl.className = 'nearby-list';
-        listEl.innerHTML = candidates.map(candidate => `
+        listEl.innerHTML = candidates.map((candidate, index) => `
             <div class="nearby-card" data-action="toggle-nearby-profile" data-uid="${candidate.uid}">
                 <div class="nearby-card-summary">
                     <div>
-                        <div class="nearby-card-title">${escapeHtml(getDisplayName(candidate))}</div>
+                        <div class="nearby-card-title">#${index + 1} ${escapeHtml(getDisplayName(candidate))}</div>
                         <div class="nearby-card-copy">${candidate.distanceKm.toFixed(1)} km aprox.</div>
+                        <div class="nearby-card-meta">
+                            ${getNearbyProfilePills(candidate).map(item => `<span class="nearby-pill">${escapeHtml(item)}</span>`).join('')}
+                        </div>
                     </div>
                     <div class="nearby-match-count">${candidate.matchCount}<span>canjes</span></div>
                 </div>
                 <div class="nearby-profile" id="nearby-profile-${candidate.uid}" hidden>
+                    ${candidate.bio ? `<div class="nearby-card-copy">${escapeHtml(candidate.bio)}</div>` : ''}
+                    <div class="nearby-profile-grid">
+                        <div class="nearby-profile-stat"><strong>${candidate.iCanGetTotal || candidate.iCanGet.length}</strong><span>te puede dar</span></div>
+                        <div class="nearby-profile-stat"><strong>${candidate.iCanGiveTotal || candidate.iCanGive.length}</strong><span>tu le das</span></div>
+                    </div>
                     <div class="nearby-card-copy">Te puede dar ${candidate.iCanGet.length} láminas y tú le puedes dar ${candidate.iCanGive.length}.</div>
                     ${candidate.iCanGet.length ? `<div class="match-section-title">Te puede dar</div><div class="match-tags">${candidate.iCanGet.map(id => `<span class="match-tag give">${id}</span>`).join('')}</div>` : ''}
                     ${candidate.iCanGive.length ? `<div class="match-section-title">Tú le puedes dar</div><div class="match-tags">${candidate.iCanGive.map(id => `<span class="match-tag take">${id}</span>`).join('')}</div>` : ''}
@@ -586,7 +726,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
         const allStickers = window.getAllStickers();
         const collectors = await getNearbyCollectors(currentUser);
-        const candidates = collectors.map(collector => {
+        nearbyCandidates = collectors.map(collector => {
             const { iCanGet, iCanGive } = getFriendTradeMatches(allStickers, window.state, collector.state || {});
             const matchCount = Math.min(iCanGet.length, iCanGive.length);
 
@@ -594,15 +734,17 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 ...collector,
                 iCanGet: iCanGet.slice(0, 8),
                 iCanGive: iCanGive.slice(0, 8),
+                iCanGetTotal: iCanGet.length,
+                iCanGiveTotal: iCanGive.length,
                 matchCount,
                 distanceKm: calculateDistanceKm(myNearbyLocation, collector.location)
             };
         }).sort((a, b) => (b.matchCount - a.matchCount) || (a.distanceKm - b.distanceKm));
 
-        nearbyCandidatesByUid = Object.fromEntries(candidates.map(candidate => [candidate.uid, candidate]));
-        renderNearbyMap(candidates);
-        renderNearbyList(candidates);
-        status.textContent = candidates.length ? 'Ranking cercano actualizado.' : 'Tu zona quedó activa. Aún no hay coleccionistas cerca.';
+        const filtered = renderFilteredNearbyCandidates();
+        status.textContent = nearbyCandidates.length
+            ? `Ranking cercano actualizado: ${filtered.length} visibles de ${nearbyCandidates.length}.`
+            : 'Tu zona quedó activa. Aún no hay coleccionistas cerca.';
     }
 
     window.openNearby = function() {
@@ -611,8 +753,11 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         if (status && !window.isSecureContext) {
             status.textContent = 'Estás en HTTP local. En celular, la ubicación real suele requerir HTTPS; usa Probar mapa o despliega en Firebase Hosting.';
         }
-        renderNearbyMap();
-        renderNearbyList();
+        if (myNearbyLocation && nearbyCandidates.length) renderFilteredNearbyCandidates();
+        else {
+            renderNearbyMap();
+            renderNearbyList();
+        }
     };
 
     window.enableNearby = async function() {
@@ -659,6 +804,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         if (!currentUser) return;
         await disableNearbyAvailability(currentUser);
         myNearbyLocation = null;
+        nearbyCandidates = [];
         nearbyCandidatesByUid = {};
         document.getElementById('nearby-status').textContent = 'Tu ubicación para canjes cercanos quedó pausada.';
         renderNearbyMap();
@@ -688,6 +834,26 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         document.getElementById('display-name-input')?.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') window.saveDisplayName();
         });
+        document.getElementById('nearby-distance-filter')?.addEventListener('change', () => {
+            if (myNearbyLocation) {
+                const filtered = renderFilteredNearbyCandidates();
+                document.getElementById('nearby-status').textContent = `Filtros aplicados: ${filtered.length} visibles de ${nearbyCandidates.length}.`;
+            }
+        });
+        document.getElementById('nearby-min-matches-filter')?.addEventListener('change', () => {
+            if (myNearbyLocation) {
+                const filtered = renderFilteredNearbyCandidates();
+                document.getElementById('nearby-status').textContent = `Filtros aplicados: ${filtered.length} visibles de ${nearbyCandidates.length}.`;
+            }
+        });
+        ['profile-display-name', 'profile-city', 'profile-zone', 'profile-favorite-team', 'profile-trade-style', 'profile-bio'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', () => {
+                const originalProfile = currentProfile;
+                currentProfile = { ...currentProfile, ...getProfileFormData() };
+                fillProfileForm();
+                currentProfile = originalProfile;
+            });
+        });
 
         document.addEventListener('click', (event) => {
             const tabButton = event.target.closest('[data-tab]');
@@ -711,10 +877,10 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'open-nearby': 'nav',
                 'open-notifications': 'nav',
                 'open-pack': 'nav',
+                'open-profile': 'nav',
                 'open-share': 'nav',
                 'open-summary': 'nav',
                 'open-trade': 'trade',
-                'save-display-name': 'success',
                 'send-nearby-request': 'trade',
                 'send-trade-request': 'trade',
                 'toggle-group': 'tap'
@@ -739,12 +905,14 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'open-share': () => window.switchView('view-share'),
                 'open-summary': window.openSummary,
                 'open-notifications': window.openNotifications,
+                'open-profile': window.openProfile,
                 'open-team': (button) => window.openTeam(button.dataset.teamCode, button.dataset.teamName, button.dataset.teamSpecial === 'true'),
                 'open-trade': window.openTrade,
                 'open-whatsapp': (button) => window.open(button.dataset.url, '_blank'),
                 'mark-notifications-read': window.markNotificationsRead,
                 'reject-trade-request': (button) => window.respondToTradeRequest(button.dataset.requestId, 'rejected'),
                 'save-display-name': window.saveDisplayName,
+                'save-profile': window.saveProfile,
                 'send-chat-message': window.sendCurrentChatMessage,
                 'send-nearby-request': (button) => window.sendNearbyTradeRequest(button.dataset.uid),
                 'send-trade-request': window.sendInternalTradeRequest,

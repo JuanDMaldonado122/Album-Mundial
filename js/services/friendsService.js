@@ -22,7 +22,12 @@ export async function getUserProfile(uid) {
 export function saveUserProfile(user, profile) {
     return set(ref(db, `profiles/${user.uid}`), {
         email: user.email,
-        displayName: profile.displayName.trim(),
+        displayName: (profile.displayName || '').trim(),
+        city: (profile.city || '').trim(),
+        zone: (profile.zone || '').trim(),
+        favoriteTeam: (profile.favoriteTeam || '').trim(),
+        tradeStyle: profile.tradeStyle || 'flexible',
+        bio: (profile.bio || '').trim(),
         updatedAt: Date.now()
     });
 }

@@ -30,6 +30,11 @@ export async function saveNearbyAvailability(currentUser, coords, profile = {}) 
         uid: currentUser.uid,
         email: currentUser.email,
         displayName: profile.displayName || currentUser.email,
+        city: profile.city || '',
+        zone: profile.zone || '',
+        favoriteTeam: profile.favoriteTeam || '',
+        tradeStyle: profile.tradeStyle || 'flexible',
+        bio: profile.bio || '',
         location,
         active: true,
         updatedAt: Date.now()
@@ -69,6 +74,11 @@ export async function getNearbyCollectors(currentUser) {
         withAlbum.push({
             ...collector,
             displayName: profile.displayName || collector.displayName || collector.email,
+            city: profile.city || collector.city || '',
+            zone: profile.zone || collector.zone || '',
+            favoriteTeam: profile.favoriteTeam || collector.favoriteTeam || '',
+            tradeStyle: profile.tradeStyle || collector.tradeStyle || 'flexible',
+            bio: profile.bio || collector.bio || '',
             state
         });
     }
