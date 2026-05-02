@@ -537,8 +537,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.8</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.8</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.9</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.9</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
@@ -1226,6 +1226,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     /* === FRIENDS LOGIC === */
     window.openFriends = function() {
         window.switchView('view-friends');
+        renderFriendInviteText();
         window.renderFriends();
     };
 
@@ -1243,6 +1244,15 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         return `Hola! Soy ${name} y estoy llenando mi álbum Mundial 2026 en esta app. Quiero comparar canjes contigo.\n\nEntra aquí:\n${getFriendInviteUrl()}\n\nCuando te registres, agrégame con este correo:\n${email}\n\nAsí vemos qué láminas nos faltan, repetidas y posibles canjes.`;
     }
 
+    function renderFriendInviteText(show = false) {
+        const box = document.getElementById('friend-invite-text');
+        if (!box || !currentUser) return null;
+
+        box.value = getFriendInviteMessage();
+        box.hidden = !show;
+        return box;
+    }
+
     function setInviteStatus(message, ok = true) {
         const status = document.getElementById('friend-invite-status');
         if (!status) return;
@@ -1258,30 +1268,46 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     window.shareFriendInvite = function() {
         if (!currentUser) return;
         const msg = getFriendInviteMessage();
-        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+        const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+        const opened = window.open(url, '_blank', 'noopener');
+        setInviteStatus('Abriendo WhatsApp con la invitación lista.');
+
+        if (!opened) {
+            window.location.href = url;
+        }
     };
 
     window.copyFriendInvite = async function() {
         if (!currentUser) return;
         const msg = getFriendInviteMessage();
+        const box = renderFriendInviteText(true);
 
         try {
             if (navigator.clipboard?.writeText) {
                 await navigator.clipboard.writeText(msg);
-            } else {
-                const textarea = document.createElement('textarea');
-                textarea.value = msg;
-                textarea.setAttribute('readonly', '');
-                textarea.style.position = 'fixed';
-                textarea.style.opacity = '0';
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                textarea.remove();
+                setInviteStatus('Invitación copiada. Ya puedes pegarla en WhatsApp o donde quieras.');
+                return;
             }
-            setInviteStatus('Invitación copiada. Ya puedes pegarla en WhatsApp o donde quieras.');
-        } catch (e) {
-            setInviteStatus('No se pudo copiar. Usa el botón de WhatsApp.', false);
+
+            if (box) {
+                box.focus();
+                box.select();
+                box.setSelectionRange(0, box.value.length);
+                const copied = document.execCommand('copy');
+                if (copied) {
+                    setInviteStatus('Invitación copiada. Ya puedes pegarla en WhatsApp o donde quieras.');
+                    return;
+                }
+            }
+        } catch (e) {}
+
+        if (box) {
+            box.focus();
+            box.select();
+            box.setSelectionRange(0, box.value.length);
+            setInviteStatus('El texto quedó listo abajo. Mantén presionado y copia manualmente.', false);
+        } else {
+            setInviteStatus('No se pudo preparar el texto. Usa el botón de WhatsApp.', false);
         }
     };
 

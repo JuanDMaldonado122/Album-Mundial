@@ -810,6 +810,19 @@
         .invite-copy { color: var(--text-muted); font-size: 12px; line-height: 1.45; }
         .invite-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
         .invite-actions .btn-trade, .invite-actions .btn-secondary { margin: 0; padding: 13px 10px; font-size: 12px; }
+        .invite-text-box {
+            width: 100%;
+            min-height: 150px;
+            margin-top: 12px;
+            border: 1px solid rgba(200,212,0,0.28);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.42);
+            color: var(--text-main);
+            padding: 12px;
+            font-size: 13px;
+            line-height: 1.45;
+            resize: vertical;
+        }
 
         .friend-card {
             background: var(--card-bg);
