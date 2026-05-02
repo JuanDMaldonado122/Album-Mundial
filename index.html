@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Álbum Mundial 2026 - Sincronizado</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#111827">
+    <meta name="theme-color" content="#0A0A0A">
+    <meta name="description" content="Controla tu album Mundial 2026, compara repetidas y coordina canjes con amigos.">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mundial26">
@@ -21,7 +22,11 @@
 <body>
 
 <div class="container" id="app">
-    
+    <div class="connection-banner" id="connection-banner" hidden>
+        <strong id="connection-title">Sin conexión</strong>
+        <span id="connection-copy">Puedes revisar lo ya cargado; la sincronización vuelve cuando regrese internet.</span>
+    </div>
+
     <!-- LOGIN/REGISTER VIEW -->
     <div id="view-auth" class="view">
         <img src="./assets/images/logo26.png?v=4" class="auth-logo" alt="Álbum Mundial 2026">
@@ -63,8 +68,20 @@
     <div id="view-home" class="view">
         <header>
             <h1>Álbum 26</h1>
-            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.12</span></p>
+            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.13</span></p>
         </header>
+
+        <section class="install-card" id="install-card" hidden>
+            <div>
+                <div class="install-kicker">App lista</div>
+                <h2 id="install-title">Instala Álbum 26</h2>
+                <p id="install-copy">Guárdala en tu celular para abrirla como app y seguir tus canjes más rápido.</p>
+            </div>
+            <div class="install-actions">
+                <button class="btn-trade" data-action="install-app" id="install-action">Instalar app</button>
+                <button class="btn-secondary" data-action="dismiss-install">Después</button>
+            </div>
+        </section>
 
         <div class="stats-dashboard">
             <div class="home-toolbar">

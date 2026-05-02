@@ -1,12 +1,17 @@
 {
-  "name": "Álbum Mundial 2026",
-  "short_name": "Álbum 26",
-  "description": "Gestiona tu colección de láminas del Mundial 2026",
+  "name": "Album Mundial 2026",
+  "short_name": "Album 26",
+  "description": "Controla tu album Mundial 2026, compara repetidas y coordina canjes con amigos.",
   "start_url": "./index.html",
+  "scope": "./",
+  "id": "album-mundial-2026",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#0A0A0A",
-  "theme_color": "#CC0000",
+  "theme_color": "#0A0A0A",
   "orientation": "portrait",
+  "categories": ["sports", "entertainment", "utilities"],
+  "lang": "es",
   "icons": [
     {
       "src": "assets/images/icon.png",

@@ -37,6 +37,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     let myNearbyLocation = null;
     let suppressStickerAudio = false;
     let celebrationTimer = null;
+    let deferredInstallPrompt = null;
+    const INSTALL_DISMISSED_KEY = 'album26-install-dismissed';
     window.smartProposalContext = null;
 
     /* === AUTHENTICATION LOGIC === */
@@ -537,8 +539,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.12</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.12</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.13</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.13</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
@@ -547,6 +549,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         window.switchView('view-home', false);
         history.replaceState({ view: 'view-home' }, '', '#home');
         window.updateStats(); 
+        updateInstallCard();
     };
 
     window.toggleGroup = function(groupId) {
@@ -1150,6 +1153,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'execute-trade': window.executeTrade,
                 'go-home': window.goHome,
                 'go-register': () => { window.location.href = 'register.html'; },
+                'install-app': window.installApp,
                 'logout': window.handleLogout,
                 'open-friends': window.openFriends,
                 'open-chat': (button) => window.openTradeChat(button.dataset.requestId),
@@ -1195,6 +1199,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'clear-notifications': window.clearAllNotifications,
                 'close-celebration': window.closeCelebration,
                 'disable-nearby': window.disableNearby,
+                'dismiss-install': window.dismissInstall,
                 'enable-nearby': window.enableNearby,
                 'enable-nearby-demo': window.enableNearbyDemo,
                 'toggle-group': (button) => window.toggleGroup(button.dataset.groupId)
@@ -1207,10 +1212,124 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         });
     }
 
+    function isStandaloneApp() {
+        return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    function isIosDevice() {
+        return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    }
+
+    function updateInstallCard(force = false) {
+        const card = document.getElementById('install-card');
+        const title = document.getElementById('install-title');
+        const copy = document.getElementById('install-copy');
+        const action = document.getElementById('install-action');
+        if (!card || !title || !copy || !action) return;
+
+        const dismissed = localStorage.getItem(INSTALL_DISMISSED_KEY) === 'true';
+        if (isStandaloneApp() || (dismissed && !force)) {
+            card.hidden = true;
+            return;
+        }
+
+        if (deferredInstallPrompt) {
+            title.textContent = 'Instala Album 26';
+            copy.textContent = 'Guárdala en tu celular para abrirla como app, con pantalla completa y acceso rápido.';
+            action.textContent = 'Instalar app';
+            card.hidden = false;
+            return;
+        }
+
+        if (isIosDevice()) {
+            title.textContent = 'Agrégala al inicio';
+            copy.textContent = 'En iPhone: toca Compartir y luego Agregar a pantalla de inicio. La app quedará como icono.';
+            action.textContent = 'Ver guía';
+            card.hidden = false;
+            return;
+        }
+
+        if (force) {
+            title.textContent = 'Instalación manual';
+            copy.textContent = 'Abre el menú del navegador y busca Instalar app o Agregar a pantalla principal.';
+            action.textContent = 'Entendido';
+            card.hidden = false;
+        }
+    }
+
+    window.installApp = async function() {
+        localStorage.removeItem(INSTALL_DISMISSED_KEY);
+
+        if (deferredInstallPrompt) {
+            deferredInstallPrompt.prompt();
+            const choice = await deferredInstallPrompt.userChoice.catch(() => null);
+            deferredInstallPrompt = null;
+            if (choice?.outcome === 'accepted') {
+                document.getElementById('install-card').hidden = true;
+            } else {
+                updateInstallCard(true);
+            }
+            return;
+        }
+
+        updateInstallCard(true);
+    };
+
+    window.dismissInstall = function() {
+        localStorage.setItem(INSTALL_DISMISSED_KEY, 'true');
+        const card = document.getElementById('install-card');
+        if (card) card.hidden = true;
+    };
+
+    function updateConnectionBanner(isOnline = navigator.onLine, announceOnline = false) {
+        const banner = document.getElementById('connection-banner');
+        const title = document.getElementById('connection-title');
+        const copy = document.getElementById('connection-copy');
+        if (!banner || !title || !copy) return;
+
+        banner.classList.toggle('online', isOnline);
+        if (isOnline) {
+            if (!announceOnline) {
+                banner.hidden = true;
+                return;
+            }
+            title.textContent = 'De vuelta en línea';
+            copy.textContent = 'La app vuelve a sincronizar álbum, amigos y canjes.';
+            banner.hidden = false;
+            setTimeout(() => { banner.hidden = true; }, 2600);
+            return;
+        }
+
+        title.textContent = 'Sin conexión';
+        copy.textContent = 'Puedes revisar lo ya cargado; los cambios se sincronizan cuando vuelva internet.';
+        banner.hidden = false;
+    }
+
+    function initPwaExperience() {
+        window.addEventListener('beforeinstallprompt', (event) => {
+            event.preventDefault();
+            deferredInstallPrompt = event;
+            updateInstallCard();
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredInstallPrompt = null;
+            localStorage.setItem(INSTALL_DISMISSED_KEY, 'true');
+            const card = document.getElementById('install-card');
+            if (card) card.hidden = true;
+        });
+
+        window.addEventListener('online', () => updateConnectionBanner(true, true));
+        window.addEventListener('offline', () => updateConnectionBanner(false));
+        updateConnectionBanner(navigator.onLine);
+        updateInstallCard();
+    }
+
     // BOOTSTRAP INITIALIZATION
     window.onload = () => {
         bindStaticEvents();
         initMatchAudioControls(document.getElementById('sound-toggle'));
+        initPwaExperience();
 
         // Init SW 
         if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(e=>{});
