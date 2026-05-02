@@ -964,6 +964,7 @@
         .podium-score { color: var(--text-muted); font-size: 11px; margin-top: 4px; }
         @media (max-width: 520px) {
             .social-stat-grid, .ranking-podium { grid-template-columns: 1fr; }
+            .request-trade-grid, .trade-context-grid { grid-template-columns: 1fr; }
             .social-friend-card { grid-template-columns: auto 1fr; }
             .social-friend-card .friend-match-badge { grid-column: 2; justify-self: start; margin: 8px 0 0; }
             .social-friend-card .friend-arrow { grid-column: 2; justify-self: end; margin-top: -32px; }
@@ -1020,12 +1021,108 @@
             margin-bottom: 12px;
         }
         .request-card.pending { border-left-color: var(--fifa-red); }
+        .request-board-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        .request-board-title { color: var(--text-main); font-size: 15px; font-weight: 900; margin-top: 3px; }
+        .request-board-tabs { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+        .request-board-tabs span {
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 999px;
+            padding: 6px 8px;
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+        }
+        .request-card-head {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: start;
+        }
         .request-title { color: var(--text-main); font-size: 14px; font-weight: 900; margin-bottom: 4px; }
         .request-copy { color: var(--text-muted); font-size: 12px; line-height: 1.5; margin-bottom: 12px; }
+        .request-status {
+            border: 1px solid rgba(200,212,0,0.34);
+            border-radius: 999px;
+            padding: 6px 8px;
+            color: var(--fifa-lime);
+            background: rgba(200,212,0,0.08);
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            white-space: nowrap;
+        }
+        .request-status.pending { border-color: rgba(204,0,0,0.36); color: #ff6666; background: rgba(204,0,0,0.08); }
+        .request-trade-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 10px 0 13px;
+        }
+        .request-mini-label {
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-bottom: 7px;
+        }
         .team-trade-top { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; }
         .request-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .request-actions .btn-secondary, .request-actions .btn-trade { margin: 0; padding: 12px 10px; font-size: 12px; }
         .request-actions .btn-secondary:disabled { opacity: 0.45; cursor: not-allowed; }
+        .trade-chip.muted { opacity: 0.55; }
+        .trade-context-card {
+            border: 1px solid rgba(255,255,255,0.14);
+            background: linear-gradient(135deg, rgba(91,31,130,0.14), rgba(200,212,0,0.07)), rgba(255,255,255,0.04);
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+        .trade-context-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        .trade-context-title {
+            color: var(--text-main);
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            letter-spacing: 2px;
+            font-weight: 400;
+            text-transform: uppercase;
+        }
+        .trade-context-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .quick-replies {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            margin-bottom: 8px;
+        }
+        .quick-reply {
+            border: 1px solid rgba(255,255,255,0.16);
+            background: rgba(255,255,255,0.05);
+            color: var(--text-main);
+            border-radius: 999px;
+            padding: 9px 12px;
+            font-size: 12px;
+            font-weight: 900;
+            white-space: nowrap;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+        }
         .chat-messages {
             display: grid;
             gap: 10px;

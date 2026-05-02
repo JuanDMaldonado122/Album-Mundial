@@ -537,8 +537,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.11</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.11</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.12</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.12</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
@@ -1131,6 +1131,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'open-trade': 'trade',
                 'open-team-trades': 'trade',
                 'send-nearby-request': 'trade',
+                'quick-chat': 'trade',
                 'send-team-trade-request': 'trade',
                 'send-trade-request': 'trade',
                 'share-friend-invite': 'trade',
@@ -1165,6 +1166,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'open-whatsapp': (button) => window.open(button.dataset.url, '_blank'),
                 'mark-notifications-read': window.markNotificationsRead,
                 'reject-trade-request': (button) => window.respondToTradeRequest(button.dataset.requestId, 'rejected'),
+                'quick-chat': (button) => window.sendQuickChatMessage(button.dataset.message),
                 'save-display-name': window.saveDisplayName,
                 'save-profile': window.saveProfile,
                 'send-chat-message': window.sendCurrentChatMessage,
@@ -1414,6 +1416,54 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         return `${Math.min(give, get)} canjes posibles: tu das ${give} y recibes ${get}.`;
     }
 
+    function getRequestSides(request) {
+        const incoming = request.toUid === currentUser?.uid;
+        const proposal = request.proposal || {};
+
+        return {
+            incoming,
+            iGive: incoming ? (proposal.iCanGet || []) : (proposal.iCanGive || []),
+            iReceive: incoming ? (proposal.iCanGive || []) : (proposal.iCanGet || [])
+        };
+    }
+
+    function renderTradeChips(items, cssClass = '') {
+        if (!items || items.length === 0) return '<span class="trade-chip muted">Sin laminas</span>';
+        return items.map(id => `<span class="trade-chip ${cssClass}">${escapeHtml(id)}</span>`).join('');
+    }
+
+    function getRequestStatusLabel(status) {
+        return {
+            pending: 'Pendiente',
+            accepted: 'Aceptada',
+            rejected: 'Rechazada'
+        }[status] || 'Pendiente';
+    }
+
+    function renderTradeContext(request) {
+        const { iGive, iReceive } = getRequestSides(request);
+
+        return `
+            <div class="trade-context-head">
+                <div>
+                    <div class="insight-kicker">Canje acordado</div>
+                    <div class="trade-context-title">${Math.min(iGive.length, iReceive.length)} x ${Math.min(iGive.length, iReceive.length)}</div>
+                </div>
+                <div class="request-status ${request.status}">${escapeHtml(getRequestStatusLabel(request.status))}</div>
+            </div>
+            <div class="trade-context-grid">
+                <div>
+                    <div class="match-section-title">Tu das</div>
+                    <div class="match-tags">${renderTradeChips(iGive, 'take')}</div>
+                </div>
+                <div>
+                    <div class="match-section-title">Tu recibes</div>
+                    <div class="match-tags">${renderTradeChips(iReceive, 'give')}</div>
+                </div>
+            </div>
+        `;
+    }
+
     function escapeHtml(value) {
         return String(value).replace(/[&<>"']/g, char => ({
             '&': '&amp;',
@@ -1441,14 +1491,24 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
         container.innerHTML = `
             <div class="insight-card">
-                <div class="insight-kicker">Solicitudes de canje</div>
+                <div class="request-board-head">
+                    <div>
+                        <div class="insight-kicker">Solicitudes de canje</div>
+                        <div class="request-board-title">${relevant.length} activas</div>
+                    </div>
+                    <div class="request-board-tabs">
+                        <span>${relevant.filter(item => item.status === 'pending').length} pendientes</span>
+                        <span>${relevant.filter(item => item.status === 'accepted').length} aceptadas</span>
+                    </div>
+                </div>
                 ${relevant.map(request => {
                     const incoming = request.toUid === currentUser.uid;
                     const otherName = incoming
                         ? (request.fromDisplayName || request.fromEmail)
                         : (request.toDisplayName || request.toEmail);
                     const title = incoming ? `${otherName} quiere canjear` : `Solicitud para ${otherName}`;
-                    const status = request.status === 'accepted' ? 'Aceptada' : 'Pendiente';
+                    const status = getRequestStatusLabel(request.status);
+                    const { iGive, iReceive } = getRequestSides(request);
                     const actions = request.status === 'accepted'
                         ? `<button class="btn-trade" data-action="open-chat" data-request-id="${request.id}">Abrir chat</button>`
                         : incoming
@@ -1457,8 +1517,17 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
                     return `
                         <div class="request-card ${request.status}">
-                            <div class="request-title">${escapeHtml(title)}</div>
-                            <div class="request-copy">${escapeHtml(status)}. ${escapeHtml(getRequestSummary(request))}</div>
+                            <div class="request-card-head">
+                                <div>
+                                    <div class="request-title">${escapeHtml(title)}</div>
+                                    <div class="request-copy">${escapeHtml(status)}. ${escapeHtml(getRequestSummary(request))}</div>
+                                </div>
+                                <div class="request-status ${request.status}">${escapeHtml(status)}</div>
+                            </div>
+                            <div class="request-trade-grid">
+                                <div><div class="request-mini-label">Tu das</div><div class="match-tags">${renderTradeChips(iGive, 'take')}</div></div>
+                                <div><div class="request-mini-label">Tu recibes</div><div class="match-tags">${renderTradeChips(iReceive, 'give')}</div></div>
+                            </div>
                             <div class="request-actions">${actions}</div>
                         </div>
                     `;
@@ -1803,7 +1872,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             ? (request.toDisplayName || request.toEmail)
             : (request.fromDisplayName || request.fromEmail);
         document.getElementById('chat-title').textContent = otherName.toUpperCase();
-        document.getElementById('chat-context').textContent = getRequestSummary(request);
+        document.getElementById('chat-context').innerHTML = renderTradeContext(request);
         document.getElementById('chat-input').value = '';
         window.switchView('view-chat');
 
@@ -1841,6 +1910,17 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             currentUser,
             currentProfile,
             text
+        });
+    };
+
+    window.sendQuickChatMessage = async function(message) {
+        if (!currentChat || !currentUser || !message) return;
+
+        await sendChatMessage({
+            chatId: currentChat.chatId,
+            currentUser,
+            currentProfile,
+            text: message
         });
     };
 

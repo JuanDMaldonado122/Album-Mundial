@@ -63,7 +63,7 @@
     <div id="view-home" class="view">
         <header>
             <h1>Álbum 26</h1>
-            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.11</span></p>
+            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.12</span></p>
         </header>
 
         <div class="stats-dashboard">
@@ -440,7 +440,13 @@
             <button class="btn-back" data-action="open-friends"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
             <h2 class="nav-title" id="chat-title">Chat</h2>
         </div>
-        <div class="friend-msg-box" id="chat-context"></div>
+        <div class="trade-context-card" id="chat-context"></div>
+        <div class="quick-replies" id="quick-replies">
+            <button class="quick-reply" data-action="quick-chat" data-message="¿Dónde nos vemos?">Dónde</button>
+            <button class="quick-reply" data-action="quick-chat" data-message="¿Te sirve hoy?">Hoy</button>
+            <button class="quick-reply" data-action="quick-chat" data-message="Listo, confirmado.">Confirmado</button>
+            <button class="quick-reply" data-action="quick-chat" data-message="Te envío foto de las láminas.">Foto</button>
+        </div>
         <div class="chat-messages" id="chat-messages"></div>
         <div class="chat-compose">
             <input type="text" id="chat-input" placeholder="Escribe un mensaje..." autocomplete="off">
