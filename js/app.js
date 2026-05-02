@@ -441,6 +441,10 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.4</span>`
                 : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.4</span>';
         }
+        const profileButtonLabel = document.querySelector('.profile-button span');
+        if (profileButtonLabel) {
+            profileButtonLabel.textContent = currentProfile.displayName || 'Perfil';
+        }
         window.switchView('view-home', false);
         history.replaceState({ view: 'view-home' }, '', '#home');
         window.updateStats(); 

@@ -91,16 +91,35 @@
 
         /* Stats Dashboard */
         .stats-dashboard { 
-            background: var(--card-bg); 
-            border: 1px solid var(--border-color); 
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03)),
+                var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.16);
             backdrop-filter: blur(16px); 
             -webkit-backdrop-filter: blur(16px); 
-            border-radius: 24px; 
-            padding: 20px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
-            margin-bottom: 20px; 
+            border-radius: 8px; 
+            padding: 18px; 
+            box-shadow: 0 18px 42px rgba(0,0,0,0.34); 
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
         }
-        .home-toolbar { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+        .stats-dashboard::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(90deg, rgba(204,0,0,0.14), transparent 26%, transparent 72%, rgba(200,212,0,0.08));
+            opacity: 0.65;
+        }
+        .stats-dashboard > * { position: relative; }
+        .home-toolbar {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 18px;
+        }
         .notification-button,
         .sound-button,
         .profile-button {
@@ -119,8 +138,39 @@
             text-transform: uppercase;
             cursor: pointer;
         }
+        .sound-button,
+        .notification-button {
+            width: 46px;
+            min-width: 46px;
+            height: 46px;
+            justify-content: center;
+            border-radius: 8px;
+            padding: 0;
+        }
+        .sound-button span,
+        .notification-button > span:not(.notification-badge) {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
         .sound-button { border-color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.055); color: var(--text-muted); }
-        .profile-button { border-color: rgba(91,31,130,0.44); background: rgba(91,31,130,0.14); color: #d8b4fe; }
+        .profile-button {
+            justify-content: flex-start;
+            min-width: 0;
+            border-radius: 8px;
+            border-color: rgba(91,31,130,0.5);
+            background: linear-gradient(135deg, rgba(91,31,130,0.34), rgba(255,255,255,0.055));
+            color: #f5d0fe;
+            padding: 12px 14px;
+        }
+        .profile-button span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
         .sound-button.is-active { border-color: rgba(200,212,0,0.42); background: rgba(200,212,0,0.14); color: var(--fifa-lime); }
         .notification-button:active,
         .sound-button:active,
@@ -138,17 +188,23 @@
             font-size: 11px;
             font-weight: 900;
         }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 18px; }
-        .stat-card { background: rgba(0,0,0,0.4); padding: 16px; border-radius: 16px; text-align: center; border: 1px solid var(--border-color); }
-        .stat-value { font-size: 32px; font-weight: 900; margin-bottom: 2px; color: var(--fifa-lime); display: flex; align-items: baseline; justify-content: center; gap: 4px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .stat-card {
+            background: rgba(0,0,0,0.46);
+            padding: 18px 14px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.13);
+        }
+        .stat-value { font-size: 34px; font-weight: 900; margin-bottom: 2px; color: var(--fifa-lime); display: flex; align-items: baseline; justify-content: center; gap: 4px; }
         .stat-value .total { font-size: 14px; color: var(--text-muted); font-weight: 700; }
         .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; }
         
-        .progress-wrapper { background: rgba(0,0,0,0.6); height: 10px; border-radius: 5px; display: flex; overflow: hidden; border: 1px solid var(--border-color); }
-        .progress-bar { height: 100%; width: 0%; background: var(--fifa-lime); transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); border-radius: 5px; }
-        .progress-info { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted); margin-top: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .progress-wrapper { background: rgba(0,0,0,0.64); height: 8px; border-radius: 999px; display: flex; overflow: hidden; border: 1px solid rgba(255,255,255,0.12); }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--fifa-lime), #f8e71c); transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); border-radius: 999px; box-shadow: 0 0 14px rgba(200,212,0,0.36); }
+        .progress-info { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; font-size: 12px; color: var(--text-muted); margin-top: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
         .sync-badge { font-size: 11px; background: rgba(200, 212, 0, 0.1); color: var(--fifa-lime); padding: 4px 10px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px; font-weight: 800; border: 1px solid rgba(200, 212, 0, 0.3); letter-spacing: 1px; }
-        .user-badge { font-size: 11px; color: var(--text-muted); cursor: pointer; text-decoration: underline; letter-spacing: 1px; font-weight: 700; text-transform: uppercase; }
+        .user-badge { font-size: 11px; color: var(--text-muted); cursor: pointer; text-decoration: none; letter-spacing: 1px; font-weight: 800; text-transform: uppercase; }
 
         /* Buttons */
         button { font-family: 'Noto Sans', sans-serif; }
