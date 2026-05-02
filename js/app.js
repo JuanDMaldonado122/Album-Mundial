@@ -537,8 +537,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.9</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.9</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.10</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.10</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
@@ -1268,12 +1268,25 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     window.shareFriendInvite = function() {
         if (!currentUser) return;
         const msg = getFriendInviteMessage();
-        const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-        const opened = window.open(url, '_blank', 'noopener');
-        setInviteStatus('Abriendo WhatsApp con la invitación lista.');
+        const box = renderFriendInviteText(true);
+        const encoded = encodeURIComponent(msg);
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const url = isMobile
+            ? `whatsapp://send?text=${encoded}`
+            : `https://api.whatsapp.com/send?text=${encoded}`;
 
-        if (!opened) {
+        if (box) {
+            box.focus();
+            box.select();
+            box.setSelectionRange(0, box.value.length);
+        }
+
+        setInviteStatus('Si WhatsApp abre sin texto, el mensaje quedó listo abajo para copiar y pegar.');
+
+        try {
             window.location.href = url;
+        } catch (e) {
+            window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank', 'noopener');
         }
     };
 
