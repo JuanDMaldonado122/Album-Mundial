@@ -63,7 +63,7 @@
     <div id="view-home" class="view">
         <header>
             <h1>Álbum 26</h1>
-            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.5</span></p>
+            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.6</span></p>
         </header>
 
         <div class="stats-dashboard">
@@ -300,6 +300,27 @@
         <div class="nav-bar">
             <button class="btn-back" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
             <h2 class="nav-title" id="team-title">Equipo</h2>
+        </div>
+        <section class="team-progress-card">
+            <div class="team-progress-head">
+                <div>
+                    <div class="team-progress-kicker">Progreso del equipo</div>
+                    <div class="team-progress-main"><span id="team-owned-count">0</span>/<span id="team-total-count">0</span></div>
+                </div>
+                <div class="team-progress-pill" id="team-progress-percent">0%</div>
+            </div>
+            <div class="team-progress-track"><span id="team-progress-bar"></span></div>
+            <div class="team-mini-stats">
+                <div><strong id="team-missing-count">0</strong><span>Faltan</span></div>
+                <div><strong id="team-duplicate-count">0</strong><span>Canjes</span></div>
+                <div><strong id="team-next-sticker">-</strong><span>Prioridad</span></div>
+            </div>
+        </section>
+        <div class="team-filter-tabs" id="team-filter-tabs">
+            <button class="team-filter-btn active" data-team-filter="all">Todas</button>
+            <button class="team-filter-btn" data-team-filter="missing">Faltan</button>
+            <button class="team-filter-btn" data-team-filter="got">Tengo</button>
+            <button class="team-filter-btn" data-team-filter="duplicate">Repetidas</button>
         </div>
         <div class="sticker-legend">
             <div class="legend-item"><div class="legend-dot dot-missing"></div> Faltante</div>

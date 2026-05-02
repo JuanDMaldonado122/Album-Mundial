@@ -1,5 +1,50 @@
 import { getSummaryLists, getTeamStickers } from "../services/albumService.js";
 
+let activeTeamFilter = 'all';
+
+function getStickerStatus(id, state) {
+    const count = state[id] || 0;
+    if (count > 1) return 'duplicate';
+    if (count === 1) return 'got';
+    return 'missing';
+}
+
+function getStickerStatusLabel(status) {
+    const labels = {
+        missing: 'Falta',
+        got: 'Lista',
+        duplicate: 'Canje'
+    };
+
+    return labels[status] || 'Falta';
+}
+
+function updateTeamProgressPanel(stickers, state) {
+    const owned = stickers.filter(id => (state[id] || 0) > 0).length;
+    const duplicates = stickers.reduce((total, id) => total + Math.max((state[id] || 0) - 1, 0), 0);
+    const missing = stickers.length - owned;
+    const percentage = stickers.length ? Math.round((owned / stickers.length) * 100) : 0;
+    const nextSticker = stickers.find(id => (state[id] || 0) === 0) || 'Completo';
+
+    document.getElementById('team-owned-count').innerText = owned;
+    document.getElementById('team-total-count').innerText = stickers.length;
+    document.getElementById('team-progress-percent').innerText = `${percentage}%`;
+    document.getElementById('team-progress-bar').style.width = `${percentage}%`;
+    document.getElementById('team-missing-count').innerText = missing;
+    document.getElementById('team-duplicate-count').innerText = duplicates;
+    document.getElementById('team-next-sticker').innerText = nextSticker;
+}
+
+function bindTeamFilters(render) {
+    document.querySelectorAll('[data-team-filter]').forEach(button => {
+        button.classList.toggle('active', button.dataset.teamFilter === activeTeamFilter);
+        button.onclick = () => {
+            activeTeamFilter = button.dataset.teamFilter || 'all';
+            render();
+        };
+    });
+}
+
 export function toggleGroup(groupId) {
     document.querySelectorAll('.group-card').forEach(card => {
         if (card.id === groupId) card.classList.toggle('open');
@@ -39,6 +84,8 @@ export function createStickerEl(id, state, updateSticker) {
     el.className = 'sticker';
 
     const count = state[id] || 0;
+    const status = getStickerStatus(id, state);
+    el.dataset.status = status;
 
     if (count === 1) el.classList.add('status-1');
     else if (count > 1) el.classList.add('status-2');
@@ -51,6 +98,11 @@ export function createStickerEl(id, state, updateSticker) {
     else codeSpan.innerText = id;
 
     el.appendChild(codeSpan);
+
+    const statusLabel = document.createElement('div');
+    statusLabel.className = 'sticker-status-label';
+    statusLabel.innerText = getStickerStatusLabel(status);
+    el.appendChild(statusLabel);
 
     if (count > 1) {
         const badge = document.createElement('div');
@@ -80,11 +132,28 @@ export function openTeamView({ albumDatabase, teamCode, teamName, isSpecial = fa
 
     const stickers = getTeamStickers(albumDatabase, teamCode, isSpecial);
     const grid = document.getElementById('sticker-grid');
-    grid.innerHTML = '';
 
-    stickers.forEach(id => {
-        grid.appendChild(createStickerEl(id, state, updateSticker));
-    });
+    updateTeamProgressPanel(stickers, state);
+
+    const renderGrid = () => {
+        const visibleStickers = activeTeamFilter === 'all'
+            ? stickers
+            : stickers.filter(id => getStickerStatus(id, state) === activeTeamFilter);
+
+        grid.innerHTML = '';
+
+        if (visibleStickers.length === 0) {
+            grid.innerHTML = '<div class="team-empty-state">No hay laminas en esta categoria.</div>';
+            return;
+        }
+
+        visibleStickers.forEach(id => {
+            grid.appendChild(createStickerEl(id, state, updateSticker));
+        });
+    };
+
+    bindTeamFilters(renderGrid);
+    renderGrid();
 
     switchView('view-team');
 }

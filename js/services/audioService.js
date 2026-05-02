@@ -90,31 +90,25 @@ function noiseBurst(offset = 0, duration = 0.35, volume = 0.09) {
     source.stop(end + 0.02);
 }
 
-function speakGoal(text = 'Gooooool') {
-    if (!('speechSynthesis' in window)) return;
-
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'es-CO';
-    utterance.rate = 0.88;
-    utterance.pitch = 1.15;
-    utterance.volume = 1;
-    window.speechSynthesis.speak(utterance);
-}
-
 function playGoalCelebration(long = false) {
-    speakGoal(long ? 'Gooooool, sobre ganador' : 'Gooooool');
-    noiseBurst(0, long ? 1.25 : 0.9, long ? 0.16 : 0.13);
+    noiseBurst(0, long ? 1.45 : 0.95, long ? 0.2 : 0.16);
+    noiseBurst(0.14, long ? 1.05 : 0.7, long ? 0.12 : 0.09);
     playKick(0);
+    playKick(0.1);
     playClap(0.16);
     playClap(0.28);
-    tone(523, 0.08, 0.16, { type: 'triangle', volume: 0.12 });
-    tone(659, 0.22, 0.16, { type: 'triangle', volume: 0.12 });
-    tone(784, 0.36, 0.28, { type: 'triangle', volume: 0.13 });
+    playClap(0.42);
+    tone(466, 0.04, 0.18, { type: 'sawtooth', volume: 0.08, slideTo: 698 });
+    tone(622, 0.18, 0.18, { type: 'sawtooth', volume: 0.075, slideTo: 932 });
+    tone(784, 0.34, 0.34, { type: 'triangle', volume: 0.12, slideTo: 1046 });
+    tone(1046, 0.48, 0.28, { type: 'triangle', volume: 0.08 });
     if (long) {
         playKick(0.58);
         playClap(0.72);
-        tone(988, 0.64, 0.26, { type: 'triangle', volume: 0.1 });
+        playClap(0.9);
+        noiseBurst(0.72, 0.9, 0.1);
+        tone(988, 0.64, 0.26, { type: 'triangle', volume: 0.1, slideTo: 1175 });
+        tone(1318, 0.92, 0.32, { type: 'triangle', volume: 0.08 });
     }
 }
 
