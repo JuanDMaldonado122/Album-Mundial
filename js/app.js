@@ -32,6 +32,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     let nearbyMarkers = [];
     let nearbyCandidatesByUid = {};
     let myNearbyLocation = null;
+    let suppressStickerAudio = false;
     window.smartProposalContext = null;
 
     /* === AUTHENTICATION LOGIC === */
@@ -212,6 +213,10 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             });
         }
         maybeNotifyProgressMilestone(previousStats, getAlbumStats(window.state));
+        if (!suppressStickerAudio) {
+            if (delta > 0) playUiSound(newVal > 1 ? 'duplicate' : 'goal');
+            else playUiSound('tap');
+        }
         localStorage.setItem(`album-2026-${currentUser.uid}`, JSON.stringify(window.state));
         refreshLocalUI();
 
@@ -285,14 +290,21 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
         const input = document.getElementById('pack-input');
         const resultEl = document.getElementById('pack-result');
-        const result = addPackFromText({
-            text: input.value,
-            allStickers: window.getAllStickers(),
-            updateSticker: window.updateSticker
-        });
+        let result;
+        suppressStickerAudio = true;
+        try {
+            result = addPackFromText({
+                text: input.value,
+                allStickers: window.getAllStickers(),
+                updateSticker: window.updateSticker
+            });
+        } finally {
+            suppressStickerAudio = false;
+        }
 
         addActivity(currentUser.uid, `Agregaste paquete de ${result.accepted.length} láminas`);
         if (result.accepted.length > 0) {
+            playUiSound(result.accepted.length > 1 ? 'packGoal' : 'goal');
             pushNotification({
                 title: 'Sobre agregado',
                 message: `Se agregaron ${result.accepted.length} láminas desde el sobre.`,
@@ -331,8 +343,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.2</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.2</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.3</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.3</span>';
         }
         window.switchView('view-home', false);
         history.replaceState({ view: 'view-home' }, '', '#home');
@@ -694,7 +706,6 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             if (!actionButton) return;
 
             const soundByAction = {
-                'add-pack': 'success',
                 'execute-trade': 'trade',
                 'open-friends': 'nav',
                 'open-nearby': 'nav',
@@ -702,7 +713,6 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'open-pack': 'nav',
                 'open-share': 'nav',
                 'open-summary': 'nav',
-                'open-team': 'sticker',
                 'open-trade': 'trade',
                 'save-display-name': 'success',
                 'send-nearby-request': 'trade',

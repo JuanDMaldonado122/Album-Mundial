@@ -2,7 +2,6 @@ const AUDIO_STORAGE_KEY = 'album26-audio-enabled';
 
 let audioContext = null;
 let masterGain = null;
-let ambienceTimer = null;
 let audioEnabled = localStorage.getItem(AUDIO_STORAGE_KEY) === 'true';
 let soundButton = null;
 
@@ -13,7 +12,7 @@ function getAudioContext() {
 
         audioContext = new AudioContextClass();
         masterGain = audioContext.createGain();
-        masterGain.gain.value = 0.18;
+        masterGain.gain.value = 0.52;
         masterGain.connect(audioContext.destination);
     }
 
@@ -51,32 +50,71 @@ function tone(frequency, offset, duration, options = {}) {
 }
 
 function playKick(offset = 0) {
-    tone(96, offset, 0.18, { type: 'sine', volume: 0.16, slideTo: 42 });
+    tone(110, offset, 0.18, { type: 'sine', volume: 0.24, slideTo: 44 });
 }
 
 function playClap(offset = 0) {
-    tone(880, offset, 0.045, { type: 'square', volume: 0.035 });
-    tone(1320, offset + 0.015, 0.04, { type: 'triangle', volume: 0.025 });
+    tone(920, offset, 0.05, { type: 'square', volume: 0.09 });
+    tone(1320, offset + 0.018, 0.05, { type: 'triangle', volume: 0.06 });
 }
 
-function playAmbiencePulse() {
-    if (!audioEnabled) return;
+function noiseBurst(offset = 0, duration = 0.35, volume = 0.09) {
+    const ctx = getAudioContext();
+    if (!ctx || !masterGain) return;
+
+    const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * duration));
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const output = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i += 1) {
+        output[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    }
+
+    const source = ctx.createBufferSource();
+    const filter = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+    const start = ctx.currentTime + offset;
+    const end = start + duration;
+
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(950, start);
+    filter.Q.value = 0.55;
+    gain.gain.setValueAtTime(0.001, start);
+    gain.gain.exponentialRampToValueAtTime(volume, start + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.001, end);
+
+    source.buffer = buffer;
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGain);
+    source.start(start);
+    source.stop(end + 0.02);
+}
+
+function speakGoal(text = 'Gooooool') {
+    if (!('speechSynthesis' in window)) return;
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'es-CO';
+    utterance.rate = 0.88;
+    utterance.pitch = 1.15;
+    utterance.volume = 1;
+    window.speechSynthesis.speak(utterance);
+}
+
+function playGoalCelebration(long = false) {
+    speakGoal(long ? 'Gooooool, sobre ganador' : 'Gooooool');
+    noiseBurst(0, long ? 1.25 : 0.9, long ? 0.16 : 0.13);
     playKick(0);
-    playClap(0.18);
-    playKick(0.36);
-    playClap(0.54);
-}
-
-function startAmbience() {
-    stopAmbience();
-    playAmbiencePulse();
-    ambienceTimer = window.setInterval(playAmbiencePulse, 4200);
-}
-
-function stopAmbience() {
-    if (ambienceTimer) {
-        window.clearInterval(ambienceTimer);
-        ambienceTimer = null;
+    playClap(0.16);
+    playClap(0.28);
+    tone(523, 0.08, 0.16, { type: 'triangle', volume: 0.12 });
+    tone(659, 0.22, 0.16, { type: 'triangle', volume: 0.12 });
+    tone(784, 0.36, 0.28, { type: 'triangle', volume: 0.13 });
+    if (long) {
+        playKick(0.58);
+        playClap(0.72);
+        tone(988, 0.64, 0.26, { type: 'triangle', volume: 0.1 });
     }
 }
 
@@ -85,13 +123,12 @@ function updateButton() {
     soundButton.classList.toggle('is-active', audioEnabled);
     soundButton.setAttribute('aria-pressed', audioEnabled ? 'true' : 'false');
     const label = soundButton.querySelector('[data-audio-label]');
-    if (label) label.textContent = audioEnabled ? 'Sonido On' : 'Sonido Off';
+    if (label) label.textContent = audioEnabled ? 'Modo Gol' : 'Sonido Off';
 }
 
 export function initMatchAudioControls(button) {
     soundButton = button;
     updateButton();
-    if (audioEnabled) startAmbience();
 }
 
 export function toggleMatchAudio() {
@@ -100,10 +137,7 @@ export function toggleMatchAudio() {
     updateButton();
 
     if (audioEnabled) {
-        startAmbience();
         playUiSound('whistle');
-    } else {
-        stopAmbience();
     }
 }
 
@@ -111,28 +145,30 @@ export function playUiSound(kind = 'tap') {
     if (!audioEnabled) return;
 
     const patterns = {
-        tap: () => tone(520, 0, 0.055, { type: 'triangle', volume: 0.045 }),
+        tap: () => tone(520, 0, 0.055, { type: 'triangle', volume: 0.08 }),
         nav: () => {
-            tone(360, 0, 0.06, { type: 'triangle', volume: 0.045 });
-            tone(540, 0.055, 0.07, { type: 'triangle', volume: 0.04 });
+            tone(380, 0, 0.06, { type: 'triangle', volume: 0.07 });
+            tone(570, 0.055, 0.07, { type: 'triangle', volume: 0.065 });
         },
-        success: () => {
-            tone(523, 0, 0.08, { type: 'triangle', volume: 0.06 });
-            tone(659, 0.08, 0.08, { type: 'triangle', volume: 0.055 });
-            tone(784, 0.16, 0.12, { type: 'triangle', volume: 0.05 });
-        },
+        success: () => playGoalCelebration(false),
         trade: () => {
             playKick(0);
-            tone(740, 0.08, 0.09, { type: 'triangle', volume: 0.055 });
-            tone(940, 0.18, 0.12, { type: 'triangle', volume: 0.05 });
+            playClap(0.12);
+            tone(740, 0.08, 0.1, { type: 'triangle', volume: 0.09 });
+            tone(940, 0.2, 0.14, { type: 'triangle', volume: 0.085 });
         },
         whistle: () => {
-            tone(1250, 0, 0.14, { type: 'sine', volume: 0.07, slideTo: 1800 });
-            tone(1700, 0.12, 0.16, { type: 'sine', volume: 0.055, slideTo: 1300 });
+            tone(1250, 0, 0.14, { type: 'sine', volume: 0.16, slideTo: 1800 });
+            tone(1700, 0.12, 0.16, { type: 'sine', volume: 0.12, slideTo: 1300 });
         },
-        sticker: () => {
-            tone(680, 0, 0.055, { type: 'square', volume: 0.04 });
-            tone(920, 0.06, 0.075, { type: 'triangle', volume: 0.045 });
+        sticker: () => playGoalCelebration(false),
+        goal: () => playGoalCelebration(false),
+        packGoal: () => playGoalCelebration(true),
+        duplicate: () => {
+            noiseBurst(0, 0.45, 0.1);
+            playClap(0.08);
+            playClap(0.24);
+            tone(700, 0.08, 0.12, { type: 'triangle', volume: 0.09 });
         }
     };
 
