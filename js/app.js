@@ -39,6 +39,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     let celebrationTimer = null;
     let deferredInstallPrompt = null;
     const INSTALL_DISMISSED_KEY = 'album26-install-dismissed';
+    const ONBOARDING_SEEN_KEY = 'album26-onboarding-seen';
     window.smartProposalContext = null;
 
     /* === AUTHENTICATION LOGIC === */
@@ -316,6 +317,24 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         window.clearTimeout(celebrationTimer);
     };
 
+    function maybeShowOnboarding() {
+        if (!currentUser || localStorage.getItem(ONBOARDING_SEEN_KEY) === 'true') return;
+        window.setTimeout(() => window.showOnboarding(false), 450);
+    }
+
+    window.showOnboarding = function(force = true) {
+        const overlay = document.getElementById('onboarding-overlay');
+        if (!overlay) return;
+        if (force) localStorage.removeItem(ONBOARDING_SEEN_KEY);
+        overlay.hidden = false;
+    };
+
+    window.finishOnboarding = function() {
+        localStorage.setItem(ONBOARDING_SEEN_KEY, 'true');
+        const overlay = document.getElementById('onboarding-overlay');
+        if (overlay) overlay.hidden = true;
+    };
+
     function maybeCelebrateTeamCompletion(stickerId, previousState) {
         if (!currentUser || !stickerId) return false;
 
@@ -539,8 +558,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.13</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.13</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.14</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.14</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
@@ -550,6 +569,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         history.replaceState({ view: 'view-home' }, '', '#home');
         window.updateStats(); 
         updateInstallCard();
+        maybeShowOnboarding();
     };
 
     window.toggleGroup = function(groupId) {
@@ -1151,6 +1171,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'copy-friend-invite': window.copyFriendInvite,
                 'create-friend-group': window.createFriendGroupFromInput,
                 'execute-trade': window.executeTrade,
+                'finish-onboarding': window.finishOnboarding,
                 'go-home': window.goHome,
                 'go-register': () => { window.location.href = 'register.html'; },
                 'install-app': window.installApp,
@@ -1181,6 +1202,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'share-friend-invite': window.shareFriendInvite,
                 'share-repeated': window.shareRepeated,
                 'smart-proposal': window.sendSmartProposal,
+                'show-onboarding': () => window.showOnboarding(true),
                 'team-trade-whatsapp': (button) => window.sendTeamTradeWhatsapp(button.dataset.uid),
                 'switch-friend-group': (button) => {
                     activeFriendGroupId = button.dataset.groupId || 'all';
@@ -1209,6 +1231,9 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 playUiSound(soundByAction[actionButton.dataset.action] || 'tap');
             }
             actions[actionButton.dataset.action]?.(actionButton);
+            if (actionButton.dataset.action === 'open-profile') {
+                window.finishOnboarding?.();
+            }
         });
     }
 

@@ -438,6 +438,83 @@
             line-height: 1.55;
             margin: 0 0 20px;
         }
+        .onboarding-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background: rgba(0,0,0,0.78);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .onboarding-card {
+            width: min(100%, 460px);
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            border: 1px solid rgba(200,212,0,0.34);
+            border-radius: 8px;
+            background:
+                radial-gradient(circle at 100% 0%, rgba(200,212,0,0.18), transparent 35%),
+                linear-gradient(145deg, rgba(204,0,0,0.14), rgba(91,31,130,0.18)),
+                #101010;
+            padding: 22px;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.55);
+            animation: popIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .onboarding-kicker {
+            color: var(--fifa-lime);
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .onboarding-card h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 38px;
+            font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 0 0 6px;
+        }
+        .onboarding-card p {
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.5;
+            margin: 0 0 16px;
+        }
+        .onboarding-steps { display: grid; gap: 10px; }
+        .onboarding-step {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 12px;
+            align-items: start;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.28);
+            padding: 12px;
+        }
+        .onboarding-step span {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: var(--fifa-lime);
+            color: #0A0A0A;
+            font-weight: 900;
+        }
+        .onboarding-step strong { display: block; color: var(--text-main); font-size: 13px; margin-bottom: 3px; }
+        .onboarding-step small { display: block; color: var(--text-muted); font-size: 12px; line-height: 1.45; }
+        .onboarding-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .onboarding-actions .btn-trade, .onboarding-actions .btn-secondary { margin: 0; padding: 13px 10px; font-size: 12px; }
 
         /* Groups List */
         .section-label { font-family: 'Bebas Neue', sans-serif; font-size: 22px; font-weight: 400; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; color: var(--text-main); text-transform: uppercase; letter-spacing: 3px; }
