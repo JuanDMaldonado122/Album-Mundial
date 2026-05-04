@@ -169,9 +169,9 @@
             backdrop-filter: blur(16px); 
             -webkit-backdrop-filter: blur(16px); 
             border-radius: 8px; 
-            padding: 18px; 
+            padding: 16px;
             box-shadow: 0 18px 42px rgba(0,0,0,0.34); 
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             position: relative;
             overflow: hidden;
         }
@@ -259,10 +259,10 @@
             font-size: 11px;
             font-weight: 900;
         }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
         .stat-card {
             background: rgba(0,0,0,0.46);
-            padding: 18px 14px;
+            padding: 16px 12px;
             border-radius: 8px;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.13);
@@ -307,17 +307,24 @@
         .btn-nearby:active { transform: scale(0.98); box-shadow: 0 4px 14px rgba(200,212,0,0.2); }
 
         .home-tabs {
-            min-height: 54vh;
+            min-height: 0;
             position: relative;
+        }
+        .home-tab-panel {
+            padding-bottom: 2px;
         }
         .home-section-actions {
             display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 10px;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
         .home-section-actions .btn-primary,
         .home-section-actions .btn-secondary {
             margin: 0;
+            min-height: 54px;
+            padding: 14px 10px;
+            font-size: 12px;
         }
         .album-scan-card {
             position: relative;
@@ -328,8 +335,8 @@
             align-items: center;
             border: 1px solid rgba(200,212,0,0.26);
             border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 14px;
+            padding: 14px;
+            margin-bottom: 12px;
             background:
                 linear-gradient(135deg, rgba(200,212,0,0.12), rgba(204,0,0,0.09) 48%, rgba(91,31,130,0.15)),
                 rgba(255,255,255,0.045);
@@ -363,7 +370,7 @@
         }
         .album-scan-card h2 {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 34px;
+            font-size: 31px;
             line-height: 1;
             letter-spacing: 2px;
             font-weight: 400;
@@ -394,8 +401,8 @@
                 linear-gradient(135deg, rgba(91,31,130,0.18), rgba(204,0,0,0.1)),
                 rgba(255,255,255,0.045);
             border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 18px;
+            padding: 14px;
+            margin-bottom: 14px;
             box-shadow: 0 14px 34px rgba(0,0,0,0.24);
         }
         .hub-kicker {
@@ -449,7 +456,7 @@
             overflow: hidden;
             border: 1px solid rgba(200,212,0,0.28);
             border-radius: 8px;
-            padding: 16px;
+            padding: 14px;
             background:
                 linear-gradient(135deg, rgba(200,212,0,0.12), rgba(91,31,130,0.18)),
                 rgba(255,255,255,0.045);
@@ -471,7 +478,7 @@
         }
         .trade-opportunity-title {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 34px;
+            font-size: 31px;
             font-weight: 400;
             letter-spacing: 2px;
             line-height: 1;
@@ -523,7 +530,7 @@
         .trade-action-grid .btn-secondary,
         .trade-action-grid .btn-nearby {
             margin: 0;
-            padding: 14px 10px;
+            padding: 13px 10px;
             font-size: 12px;
         }
         .trade-action-grid .btn-nearby {
@@ -541,8 +548,8 @@
             overflow: hidden;
             border: 1px solid rgba(200,212,0,0.22);
             border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 14px;
+            padding: 14px;
+            margin-bottom: 12px;
             background:
                 linear-gradient(135deg, rgba(91,31,130,0.2), rgba(204,0,0,0.12) 50%, rgba(200,212,0,0.08)),
                 rgba(255,255,255,0.045);
@@ -563,9 +570,9 @@
             margin-bottom: 14px;
         }
         .profile-dashboard-avatar {
-            width: 62px;
-            height: 62px;
-            border-radius: 18px;
+            width: 56px;
+            height: 56px;
+            border-radius: 8px;
             display: grid;
             place-items: center;
             color: #0A0A0A;
@@ -581,7 +588,7 @@
         }
         .profile-dashboard-info h2 {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 36px;
+            font-size: 32px;
             font-weight: 400;
             letter-spacing: 2px;
             line-height: 1;
@@ -637,12 +644,12 @@
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 8px;
             background: rgba(0,0,0,0.24);
-            padding: 10px 8px;
+            padding: 9px 7px;
         }
         .profile-stats-grid strong {
             display: block;
             color: var(--text-main);
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 900;
         }
         .profile-stats-grid span {
@@ -659,13 +666,13 @@
             bottom: calc(8px + env(safe-area-inset-bottom));
             z-index: 70;
             width: 100%;
-            margin: 26px 0 8px;
+            margin: 18px 0 6px;
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 2px;
-            padding: 6px 8px;
+            padding: 5px 6px;
             border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
+            border-radius: 8px;
             background:
                 linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02)),
                 rgba(11,9,11,0.94);
@@ -675,9 +682,9 @@
         }
         .bottom-nav-item {
             position: relative;
-            min-height: 48px;
+            min-height: 46px;
             border: 0;
-            border-radius: 12px;
+            border-radius: 6px;
             background: transparent;
             color: var(--text-muted);
             display: grid;
@@ -686,14 +693,14 @@
             font-family: 'Noto Sans', sans-serif;
             font-size: 9px;
             font-weight: 900;
-            letter-spacing: 0.55px;
+            letter-spacing: 0.45px;
             text-transform: uppercase;
             cursor: pointer;
             transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease;
         }
         .bottom-nav-item svg {
-            width: 20px;
-            height: 20px;
+            width: 19px;
+            height: 19px;
             fill: none;
             stroke: currentColor;
             stroke-width: 2.2;
@@ -730,8 +737,8 @@
                 linear-gradient(135deg, rgba(200,212,0,0.11), rgba(204,0,0,0.1) 42%, rgba(91,31,130,0.14)),
                 rgba(255,255,255,0.045);
             border-radius: 8px;
-            padding: 16px;
-            margin: 0 0 18px;
+            padding: 14px;
+            margin: 0 0 14px;
             box-shadow: 0 14px 34px rgba(0,0,0,0.24);
         }
         .quick-start-panel::before {
@@ -759,7 +766,7 @@
         .quick-start-head h2 {
             color: var(--text-main);
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 30px;
+            font-size: 28px;
             font-weight: 400;
             letter-spacing: 2px;
             line-height: 1;
@@ -815,7 +822,7 @@
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 8px;
             background: rgba(0,0,0,0.3);
-            padding: 10px;
+            padding: 9px;
         }
         .quick-start-item.is-done {
             border-color: rgba(200,212,0,0.24);
@@ -1790,13 +1797,42 @@
         .podium-name { color: var(--text-main); font-size: 12px; font-weight: 900; margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .podium-score { color: var(--text-muted); font-size: 11px; margin-top: 4px; }
         @media (max-width: 520px) {
-            .album-scan-card { grid-template-columns: 1fr; }
+            .stats-dashboard,
+            .quick-start-panel,
+            .album-scan-card,
+            .hub-card,
+            .trade-opportunity-card,
+            .profile-dashboard-card,
+            .profile-hub,
+            .activity-panel,
+            .achievement-panel {
+                padding: 13px;
+            }
+            .home-section-actions { grid-template-columns: 1fr; }
+            .album-scan-card { grid-template-columns: auto 1fr; align-items: center; }
             .album-scan-icon { width: 50px; height: 50px; }
-            .album-scan-actions { grid-template-columns: 1fr; }
-            .trade-mini-grid { grid-template-columns: 1fr; }
+            .album-scan-card h2,
+            .trade-opportunity-title,
+            .hub-card h2 { font-size: 29px; }
+            .album-scan-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .album-scan-actions .btn-primary,
+            .album-scan-actions .btn-secondary { font-size: 11px; letter-spacing: 1px; }
+            .trade-mini-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .trade-mini-stat strong { font-size: 13px; }
+            .trade-mini-stat span { font-size: 8px; letter-spacing: 0.45px; }
             .trade-action-grid { grid-template-columns: 1fr; }
-            .profile-dashboard-main { grid-template-columns: 1fr; }
-            .profile-stats-grid { grid-template-columns: 1fr; }
+            .profile-dashboard-main { grid-template-columns: auto 1fr; gap: 11px; }
+            .profile-dashboard-avatar { width: 50px; height: 50px; font-size: 22px; }
+            .profile-dashboard-info h2 { font-size: 29px; }
+            .profile-level-row { grid-template-columns: 1fr; gap: 8px; }
+            .profile-level-pill { justify-self: start; }
+            .profile-stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .profile-stats-grid strong { font-size: 15px; }
+            .profile-stats-grid span { font-size: 8px; letter-spacing: 0.45px; }
+            .quick-start-item { grid-template-columns: auto 1fr; }
+            .quick-start-action { grid-column: 2; justify-self: start; }
+            .bottom-nav { margin-top: 14px; }
+            .bottom-nav-item { min-height: 44px; font-size: 8px; }
             .social-stat-grid, .ranking-podium { grid-template-columns: 1fr; }
             .request-trade-grid, .trade-context-grid { grid-template-columns: 1fr; }
             .smart-proposal { grid-template-columns: 1fr; }
@@ -1806,6 +1842,16 @@
             .social-friend-card { grid-template-columns: auto 1fr; }
             .social-friend-card .friend-match-badge { grid-column: 2; justify-self: start; margin: 8px 0 0; }
             .social-friend-card .friend-arrow { grid-column: 2; justify-self: end; margin-top: -32px; }
+        }
+
+        @media (max-width: 360px) {
+            .album-scan-card,
+            .profile-dashboard-main { grid-template-columns: 1fr; }
+            .album-scan-actions,
+            .trade-mini-grid,
+            .profile-stats-grid { grid-template-columns: 1fr; }
+            .quick-start-item { grid-template-columns: auto 1fr; }
+            .quick-start-action { grid-column: 1 / -1; width: 100%; }
         }
 
         /* Friend trades view */
