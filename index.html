@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="./css/styles.css?v=5.24">
+    <link rel="stylesheet" href="./css/styles.css?v=5.25">
 </head>
 <body>
 
@@ -68,7 +68,7 @@
     <div id="view-home" class="view">
         <header>
             <h1>Álbum 26</h1>
-            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.24</span></p>
+            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.25</span></p>
         </header>
 
         <div class="home-tabs">
@@ -187,6 +187,26 @@
                     <div class="install-actions">
                         <button class="btn-trade" data-action="install-app" id="install-action">Instalar app</button>
                         <button class="btn-secondary" data-action="dismiss-install">Después</button>
+                    </div>
+                </section>
+
+                <section class="profile-dashboard-card">
+                    <div class="profile-dashboard-main">
+                        <div class="profile-dashboard-avatar" id="home-profile-avatar">A</div>
+                        <div class="profile-dashboard-info">
+                            <div class="hub-kicker">Mi perfil</div>
+                            <h2 id="home-profile-name">Coleccionista</h2>
+                            <p id="home-profile-meta">Listo para canjear</p>
+                        </div>
+                    </div>
+                    <div class="profile-level-row">
+                        <div class="profile-level-pill" id="home-profile-level">Nivel 1</div>
+                        <div class="profile-level-progress"><span id="home-profile-level-bar"></span></div>
+                    </div>
+                    <div class="profile-stats-grid">
+                        <div><strong id="home-profile-unique">0</strong><span>Únicas</span></div>
+                        <div><strong id="home-profile-duplicates">0</strong><span>Canjes</span></div>
+                        <div><strong id="home-profile-percent">0%</strong><span>Listo</span></div>
                     </div>
                 </section>
 
@@ -596,6 +616,6 @@
 </button>
 
 <!-- FIREBASE & LOGIC -->
-<script type="module" src="./js/app.js?v=5.24"></script>
+<script type="module" src="./js/app.js?v=5.25"></script>
 </body>
 </html>

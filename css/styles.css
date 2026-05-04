@@ -536,6 +536,124 @@
         .profile-hub .btn-secondary {
             grid-column: span 3;
         }
+        .profile-dashboard-card {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(200,212,0,0.22);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 14px;
+            background:
+                linear-gradient(135deg, rgba(91,31,130,0.2), rgba(204,0,0,0.12) 50%, rgba(200,212,0,0.08)),
+                rgba(255,255,255,0.045);
+            box-shadow: 0 16px 36px rgba(0,0,0,0.28);
+        }
+        .profile-dashboard-card::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto;
+            height: 3px;
+            background: linear-gradient(90deg, var(--fifa-purple), var(--fifa-red), var(--fifa-lime));
+        }
+        .profile-dashboard-main {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 14px;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+        .profile-dashboard-avatar {
+            width: 62px;
+            height: 62px;
+            border-radius: 18px;
+            display: grid;
+            place-items: center;
+            color: #0A0A0A;
+            background: linear-gradient(135deg, var(--fifa-lime), #fff176);
+            border: 1px solid rgba(255,255,255,0.28);
+            box-shadow: 0 10px 22px rgba(200,212,0,0.18);
+            font-size: 26px;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+        .profile-dashboard-info {
+            min-width: 0;
+        }
+        .profile-dashboard-info h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 36px;
+            font-weight: 400;
+            letter-spacing: 2px;
+            line-height: 1;
+            text-transform: uppercase;
+            margin: 0 0 4px;
+            overflow-wrap: anywhere;
+        }
+        .profile-dashboard-info p {
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.45;
+            margin: 0;
+        }
+        .profile-level-row {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .profile-level-pill {
+            border: 1px solid rgba(200,212,0,0.36);
+            border-radius: 999px;
+            background: rgba(200,212,0,0.12);
+            color: var(--fifa-lime);
+            padding: 7px 10px;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .profile-level-progress {
+            height: 9px;
+            border-radius: 999px;
+            background: rgba(0,0,0,0.34);
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .profile-level-progress span {
+            display: block;
+            height: 100%;
+            width: 0%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--fifa-red), var(--fifa-lime));
+        }
+        .profile-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .profile-stats-grid div {
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.24);
+            padding: 10px 8px;
+        }
+        .profile-stats-grid strong {
+            display: block;
+            color: var(--text-main);
+            font-size: 18px;
+            font-weight: 900;
+        }
+        .profile-stats-grid span {
+            display: block;
+            color: var(--text-muted);
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-top: 3px;
+        }
         .bottom-nav {
             position: sticky;
             bottom: calc(8px + env(safe-area-inset-bottom));
@@ -1677,6 +1795,8 @@
             .album-scan-actions { grid-template-columns: 1fr; }
             .trade-mini-grid { grid-template-columns: 1fr; }
             .trade-action-grid { grid-template-columns: 1fr; }
+            .profile-dashboard-main { grid-template-columns: 1fr; }
+            .profile-stats-grid { grid-template-columns: 1fr; }
             .social-stat-grid, .ranking-podium { grid-template-columns: 1fr; }
             .request-trade-grid, .trade-context-grid { grid-template-columns: 1fr; }
             .smart-proposal { grid-template-columns: 1fr; }

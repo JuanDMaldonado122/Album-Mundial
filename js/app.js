@@ -198,6 +198,47 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         }[value] || 'Flexible';
     }
 
+    function getCollectorLevel(stats) {
+        const unique = stats.unique || 0;
+        if (unique >= 800) return { label: 'Leyenda mundial', level: 5, next: 980, base: 800 };
+        if (unique >= 500) return { label: 'Capitán del álbum', level: 4, next: 800, base: 500 };
+        if (unique >= 250) return { label: 'Titular fijo', level: 3, next: 500, base: 250 };
+        if (unique >= 75) return { label: 'Promesa mundialista', level: 2, next: 250, base: 75 };
+        return { label: 'Debut mundialista', level: 1, next: 75, base: 0 };
+    }
+
+    function renderHomeProfileCard() {
+        if (!currentUser) return;
+
+        const profile = currentProfile || {};
+        const stats = getAlbumStats(window.state || {});
+        const displayName = profile.displayName || currentUser.email?.split('@')[0] || 'Coleccionista';
+        const metaParts = [
+            profile.favoriteTeam ? `Hincha de ${profile.favoriteTeam}` : '',
+            profile.city || profile.zone || '',
+            getTradeStyleLabel(profile.tradeStyle)
+        ].filter(Boolean);
+        const level = getCollectorLevel(stats);
+        const levelProgress = level.next === level.base
+            ? 100
+            : Math.min(100, Math.max(0, Math.round(((stats.unique - level.base) / (level.next - level.base)) * 100)));
+
+        const setText = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        };
+        setText('home-profile-avatar', displayName.slice(0, 1).toUpperCase());
+        setText('home-profile-name', displayName);
+        setText('home-profile-meta', metaParts.join(' - ') || 'Completa tu perfil para que tus canjes tengan más personalidad.');
+        setText('home-profile-level', `Nivel ${level.level} - ${level.label}`);
+        setText('home-profile-unique', stats.unique);
+        setText('home-profile-duplicates', stats.duplicates);
+        setText('home-profile-percent', `${stats.percentage}%`);
+
+        const bar = document.getElementById('home-profile-level-bar');
+        if (bar) bar.style.width = `${levelProgress}%`;
+    }
+
     function fillProfileForm() {
         const profile = currentProfile || {};
         const displayName = profile.displayName || '';
@@ -261,6 +302,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             playUiSound('tap');
             trackActivity('profile', 'Perfil actualizado', 'Actualizaste tu información visible para rankings y canjes.');
             fillProfileForm();
+            renderHomeProfileCard();
             if (myNearbyLocation) {
                 await saveNearbyAvailability(currentUser, {
                     latitude: myNearbyLocation.lat,
@@ -639,6 +681,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         renderQuickStartPanel();
         renderAchievements();
         renderActivityCenter();
+        renderHomeProfileCard();
         if (currentHomeTab === 'canjes') renderTradeHomePanel();
     };
 
@@ -754,13 +797,14 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.24</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.24</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.25</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.25</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
             profileButtonLabel.textContent = currentProfile.displayName || 'Perfil';
         }
+        renderHomeProfileCard();
         window.switchView('view-home', false);
         window.switchHomeTab(currentHomeTab);
         history.replaceState({ view: 'view-home' }, '', '#home');
