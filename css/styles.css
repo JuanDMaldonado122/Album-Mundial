@@ -379,6 +379,81 @@
             padding: 12px;
             line-height: 1.5;
         }
+        .activity-panel {
+            border: 1px solid rgba(255,255,255,0.14);
+            background: linear-gradient(135deg, rgba(204,0,0,0.1), rgba(0,0,0,0.32)), rgba(255,255,255,0.045);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 0 0 18px;
+            box-shadow: 0 14px 34px rgba(0,0,0,0.22);
+        }
+        .activity-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 12px;
+        }
+        .activity-kicker {
+            color: var(--fifa-lime);
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .activity-header h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 26px;
+            font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 0;
+        }
+        .activity-count {
+            min-width: 44px;
+            border: 1px solid rgba(200,212,0,0.34);
+            background: rgba(200,212,0,0.1);
+            color: var(--fifa-lime);
+            border-radius: 8px;
+            padding: 8px 10px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 900;
+        }
+        .activity-feed { display: grid; gap: 9px; }
+        .activity-card {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 10px;
+            align-items: start;
+            background: rgba(0,0,0,0.32);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .activity-icon {
+            width: 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            border-radius: 8px;
+            background: rgba(200,212,0,0.12);
+            color: var(--fifa-lime);
+            font-size: 14px;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+        .activity-title { color: var(--text-main); font-size: 13px; font-weight: 900; margin-bottom: 2px; }
+        .activity-message { color: var(--text-muted); font-size: 12px; line-height: 1.4; }
+        .activity-date { color: var(--fifa-lime); font-size: 10px; font-weight: 900; text-transform: uppercase; white-space: nowrap; }
+        .activity-empty {
+            color: var(--text-muted);
+            font-size: 12px;
+            text-align: center;
+            padding: 14px;
+            line-height: 1.5;
+        }
         .celebration-overlay {
             position: fixed;
             inset: 0;

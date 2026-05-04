@@ -4,7 +4,7 @@ import { generateStickerPdf } from "./features/pdfExport.js";
 import { captureAndScan, closeScanner, openScanner } from "./features/scanner.js";
 import { createCollectionShareCard } from "./features/shareCard.js";
 import { executeManualTrade, openTradeView } from "./features/trade.js";
-import { addActivity } from "./services/activityService.js";
+import { addActivity, formatActivityHour, formatActivityTime, getActivity } from "./services/activityService.js";
 import { loginUser, logoutUser, persistAuthSession, registerUser, watchAuthState } from "./services/authService.js";
 import { createTradeRequest, getUserTradeRequests, respondTradeRequest, sendChatMessage, watchChatMessages } from "./services/chatService.js";
 import { getAlbumStats, getAllStickers, getDuplicateStickerIds, getSummaryLists, getTeamStickers } from "./services/albumService.js";
@@ -168,6 +168,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 type: 'profile',
                 action: 'summary'
             });
+            trackActivity('profile', 'Perfil listo', `Elegiste el nombre ${displayName}.`);
             window.goHome();
         } catch (e) {
             status.textContent = 'No se pudo guardar el nombre. Revisa Firebase.';
@@ -255,6 +256,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             currentProfile = { ...profile, email: currentUser.email };
             status.textContent = 'Perfil actualizado. Ahora tus canjes cercanos tienen más personalidad.';
             playUiSound('tap');
+            trackActivity('profile', 'Perfil actualizado', 'Actualizaste tu información visible para rankings y canjes.');
             fillProfileForm();
             if (myNearbyLocation) {
                 await saveNearbyAvailability(currentUser, {
@@ -275,6 +277,52 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         window.renderNotificationBadge();
     }
 
+    function trackActivity(type, title, message) {
+        if (!currentUser) return;
+        addActivity(currentUser.uid, { type, title, message });
+        renderActivityCenter();
+    }
+
+    function getActivityIcon(type = 'general') {
+        return {
+            sticker: 'L',
+            duplicate: 'R',
+            pack: 'S',
+            achievement: 'G',
+            friend: 'A',
+            group: 'G',
+            trade: 'C',
+            nearby: 'U',
+            profile: 'P',
+            general: 'A'
+        }[type] || 'A';
+    }
+
+    function renderActivityCenter() {
+        const feed = document.getElementById('activity-feed');
+        const count = document.getElementById('activity-count');
+        if (!feed || !count || !currentUser) return;
+
+        const activity = getActivity(currentUser.uid);
+        count.textContent = activity.length;
+
+        if (activity.length === 0) {
+            feed.innerHTML = '<div class="activity-empty">Tus movimientos importantes aparecerán aquí cuando empieces a llenar y canjear.</div>';
+            return;
+        }
+
+        feed.innerHTML = activity.slice(0, 6).map(item => `
+            <div class="activity-card">
+                <div class="activity-icon">${escapeHtml(getActivityIcon(item.type))}</div>
+                <div>
+                    <div class="activity-title">${escapeHtml(item.title || 'Movimiento')}</div>
+                    <div class="activity-message">${escapeHtml(item.message)}</div>
+                </div>
+                <div class="activity-date">${escapeHtml(formatActivityTime(item.at))}<br>${escapeHtml(formatActivityHour(item.at))}</div>
+            </div>
+        `).join('');
+    }
+
     function maybeNotifyProgressMilestone(previousStats, nextStats) {
         if (!currentUser) return;
 
@@ -290,6 +338,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                     type: 'milestone',
                     action: 'summary'
                 });
+                trackActivity('achievement', `Álbum al ${milestone}%`, `Llegaste a ${nextStats.unique} láminas únicas.`);
                 markMilestoneNotified(currentUser.uid, milestone);
             }
         }
@@ -353,6 +402,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 type: 'achievement',
                 action: 'summary'
             });
+            trackActivity('achievement', title, message);
             return true;
         }
 
@@ -413,7 +463,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         
         // Optimistic local update
         window.state[id] = newVal;
-        addActivity(currentUser.uid, `${delta > 0 ? 'Agregaste' : 'Quitaste'} ${id}`);
+        trackActivity(delta > 0 ? 'sticker' : 'general', delta > 0 ? 'Lámina agregada' : 'Lámina ajustada', `${delta > 0 ? 'Agregaste' : 'Quitaste'} ${id}.`);
         if (delta > 0 && newVal > 1) {
             pushNotification({
                 title: 'Nueva repetida',
@@ -421,6 +471,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 type: 'duplicate',
                 action: 'friends'
             });
+            trackActivity('duplicate', 'Nueva repetida', `${id} ya está disponible para canjes.`);
         }
         maybeNotifyProgressMilestone(previousStats, getAlbumStats(window.state));
         const playedCelebration = delta > 0 && maybeCelebrateTeamCompletion(id, previousState);
@@ -459,6 +510,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         document.getElementById('progress-bar').style.width = `${stats.percentage}%`;
         window.renderNotificationBadge();
         renderAchievements();
+        renderActivityCenter();
     };
 
     window.shareWsp = function() {
@@ -517,7 +569,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             suppressStickerAudio = false;
         }
 
-        addActivity(currentUser.uid, `Agregaste paquete de ${result.accepted.length} láminas`);
+        trackActivity('pack', 'Sobre agregado', `Agregaste ${result.accepted.length} láminas desde un sobre.`);
         if (result.accepted.length > 0) {
             playUiSound(result.accepted.length > 1 ? 'packGoal' : 'goal');
             pushNotification({
@@ -1046,6 +1098,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 type: 'nearby',
                 action: 'friends'
             });
+            trackActivity('nearby', 'Canjes cerca activado', 'Activaste tu zona aproximada para encontrar coleccionistas.');
             await refreshNearbyCandidates();
         } catch (e) {
             status.textContent = getLocationErrorMessage(e);
@@ -1701,6 +1754,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 type: 'group',
                 action: 'friends'
             });
+            trackActivity('group', 'Grupo creado', `Creaste el grupo ${group.name}.`);
             status.className = 'ok';
             status.textContent = `Grupo ${group.name} creado.`;
             window.renderFriends();
@@ -1749,6 +1803,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 type: 'friend',
                 action: 'friends'
             });
+            trackActivity('friend', 'Amigo agregado', `${result.email} ya puede comparar progreso y canjes contigo.`);
             status.className = 'ok';
             status.textContent = selectedGroupId === 'all' ? 'Amigo agregado correctamente.' : 'Amigo agregado al grupo.';
             window.renderFriends();
@@ -1945,6 +2000,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 type: 'trade-request',
                 action: 'friends'
             });
+            trackActivity('trade', 'Solicitud enviada', `Propusiste un canje a ${proposal.friendDisplayName || proposal.friendEmail}.`);
             alert('Solicitud enviada. Cuando la otra persona acepte, se habilita el chat.');
             tradeRequestsById[request.id] = request;
             window.openFriends();
@@ -1976,6 +2032,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 type: 'nearby',
                 action: 'friends'
             });
+            trackActivity('trade', 'Solicitud cercana enviada', `Propusiste un canje a ${getDisplayName(candidate)}.`);
             alert('Solicitud enviada. Si la otra persona acepta, se habilita el chat interno.');
         } catch (e) {
             alert('No se pudo enviar la solicitud cercana.');
@@ -1994,6 +2051,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 type: 'trade-request',
                 action: 'friends'
             });
+            trackActivity('trade', status === 'accepted' ? 'Canje aceptado' : 'Canje rechazado', status === 'accepted' ? 'Aceptaste una solicitud y se abrió el chat.' : 'Rechazaste una solicitud de canje.');
             await window.renderFriends();
             if (status === 'accepted') window.openTradeChat(requestId);
         } catch (e) {

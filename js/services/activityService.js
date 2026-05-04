@@ -14,11 +14,14 @@ export function getActivity(uid) {
     }
 }
 
-export function addActivity(uid, message) {
+export function addActivity(uid, activity) {
+    const message = typeof activity === 'string' ? activity : activity?.message;
     if (!uid || !message) return;
 
     const items = getActivity(uid);
     items.unshift({
+        type: typeof activity === 'string' ? 'general' : activity.type || 'general',
+        title: typeof activity === 'string' ? '' : activity.title || '',
         message,
         at: new Date().toISOString()
     });
@@ -29,4 +32,9 @@ export function addActivity(uid, message) {
 export function formatActivityTime(isoDate) {
     const date = new Date(isoDate);
     return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+export function formatActivityHour(isoDate) {
+    const date = new Date(isoDate);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
