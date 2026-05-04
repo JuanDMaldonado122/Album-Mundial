@@ -207,6 +207,48 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         return { label: 'Debut mundialista', level: 1, next: 75, base: 0 };
     }
 
+    function getProfileReadiness(profile = {}) {
+        const steps = [
+            { label: 'Apodo visible', done: Boolean(profile.displayName?.trim()) },
+            { label: 'Ciudad o zona', done: Boolean(profile.city?.trim() || profile.zone?.trim()) },
+            { label: 'Equipo favorito', done: Boolean(profile.favoriteTeam?.trim()) },
+            { label: 'Estilo de canje', done: Boolean(profile.tradeStyle) },
+            { label: 'Frase personal', done: Boolean(profile.bio?.trim()) }
+        ];
+        const done = steps.filter(step => step.done).length;
+        return { steps, done, percentage: Math.round((done / steps.length) * 100) };
+    }
+
+    function renderProfileChecklist(containerId, readiness) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = readiness.steps.map(step => `
+            <div class="profile-check-item ${step.done ? 'is-done' : ''}">
+                <span>${step.done ? '✓' : '·'}</span>
+                <strong>${escapeHtml(step.label)}</strong>
+            </div>
+        `).join('');
+    }
+
+    function renderProfileReadiness(profile = {}) {
+        const readiness = getProfileReadiness(profile);
+        const setText = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        };
+        const setWidth = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.style.width = `${value}%`;
+        };
+
+        setText('home-profile-readiness-score', `${readiness.percentage}%`);
+        setText('profile-readiness-score', `${readiness.percentage}%`);
+        setWidth('home-profile-readiness-bar', readiness.percentage);
+        setWidth('profile-readiness-bar', readiness.percentage);
+        renderProfileChecklist('home-profile-checklist', readiness);
+        renderProfileChecklist('profile-readiness-list', readiness);
+    }
+
     function renderHomeProfileCard() {
         if (!currentUser) return;
 
@@ -234,9 +276,16 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         setText('home-profile-unique', stats.unique);
         setText('home-profile-duplicates', stats.duplicates);
         setText('home-profile-percent', `${stats.percentage}%`);
+        setText('home-profile-team', profile.favoriteTeam || 'Por elegir');
+        setText('home-profile-location', [profile.city, profile.zone].filter(Boolean).join(' - ') || 'Sin zona');
+        setText('home-profile-style', getTradeStyleLabel(profile.tradeStyle));
+        setText('home-profile-bio', profile.bio || 'Agrega una frase para que otros coleccionistas sepan como te gusta canjear.');
 
         const bar = document.getElementById('home-profile-level-bar');
         if (bar) bar.style.width = `${levelProgress}%`;
+        const avatar = document.getElementById('home-profile-avatar');
+        if (avatar) avatar.className = `profile-dashboard-avatar level-${level.level}`;
+        renderProfileReadiness(profile);
     }
 
     function fillProfileForm() {
@@ -269,6 +318,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             const parts = [city, zone, favoriteTeam ? `Hincha de ${favoriteTeam}` : '', getTradeStyleLabel(tradeStyle)].filter(Boolean);
             previewMeta.textContent = parts.join(' - ') || 'Listo para canjear';
         }
+        renderProfileReadiness({ displayName, city, zone, favoriteTeam, tradeStyle, bio });
     }
 
     window.openProfile = function() {
@@ -804,8 +854,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.28</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.28</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.29</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.29</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
@@ -1524,23 +1574,23 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
         if (deferredInstallPrompt) {
             title.textContent = 'Instala Album 26';
-            copy.textContent = 'Guárdala en tu celular para abrirla como app, con pantalla completa y acceso rápido.';
+            copy.textContent = 'Guardala como app para entrar directo al album, revisar canjes y seguir jugando en pantalla completa.';
             action.textContent = 'Instalar app';
             card.hidden = false;
             return;
         }
 
         if (isIosDevice()) {
-            title.textContent = 'Agrégala al inicio';
-            copy.textContent = 'En iPhone: toca Compartir y luego Agregar a pantalla de inicio. La app quedará como icono.';
+            title.textContent = 'Llevala al inicio';
+            copy.textContent = 'En iPhone toca Compartir, elige Agregar a pantalla de inicio y quedara como una app del album.';
             action.textContent = 'Ver guía';
             card.hidden = false;
             return;
         }
 
         if (force) {
-            title.textContent = 'Instalación manual';
-            copy.textContent = 'Abre el menú del navegador y busca Instalar app o Agregar a pantalla principal.';
+            title.textContent = 'Instalacion manual';
+            copy.textContent = 'Abre el menu del navegador y busca Instalar app o Agregar a pantalla principal.';
             action.textContent = 'Entendido';
             card.hidden = false;
         }

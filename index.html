@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="./css/styles.css?v=5.28">
+    <link rel="stylesheet" href="./css/styles.css?v=5.29">
 </head>
 <body>
 
@@ -68,7 +68,7 @@
     <div id="view-home" class="view">
         <header>
             <h1>Álbum 26</h1>
-            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.28</span></p>
+            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.29</span></p>
         </header>
 
         <div class="home-tabs">
@@ -208,6 +208,20 @@
                         <div><strong id="home-profile-duplicates">0</strong><span>Canjes</span></div>
                         <div><strong id="home-profile-percent">0%</strong><span>Listo</span></div>
                     </div>
+                    <div class="profile-identity-grid">
+                        <div><span>Equipo</span><strong id="home-profile-team">Por elegir</strong></div>
+                        <div><span>Zona</span><strong id="home-profile-location">Sin zona</strong></div>
+                        <div><span>Estilo</span><strong id="home-profile-style">Flexible</strong></div>
+                    </div>
+                    <div class="profile-bio-line" id="home-profile-bio">Agrega una frase para que otros coleccionistas sepan como te gusta canjear.</div>
+                    <div class="profile-readiness">
+                        <div class="profile-readiness-head">
+                            <span>Perfil para canjes</span>
+                            <strong id="home-profile-readiness-score">0%</strong>
+                        </div>
+                        <div class="profile-level-progress"><span id="home-profile-readiness-bar"></span></div>
+                        <div class="profile-checklist" id="home-profile-checklist"></div>
+                    </div>
                 </section>
 
                 <div class="profile-hub">
@@ -274,6 +288,17 @@
                 <div class="profile-subtitle" id="profile-preview-meta">Listo para canjear</div>
             </div>
         </div>
+        <section class="profile-readiness-card">
+            <div class="profile-readiness-head">
+                <div>
+                    <div class="install-kicker">Identidad</div>
+                    <h3>Tu carta de coleccionista</h3>
+                </div>
+                <strong id="profile-readiness-score">0%</strong>
+            </div>
+            <div class="profile-level-progress"><span id="profile-readiness-bar"></span></div>
+            <div class="profile-checklist" id="profile-readiness-list"></div>
+        </section>
         <div class="profile-form">
             <label>Apodo visible</label>
             <input type="text" id="profile-display-name" placeholder="Ej: Familia Torres" maxlength="32" autocomplete="nickname">
@@ -616,6 +641,6 @@
 </button>
 
 <!-- FIREBASE & LOGIC -->
-    <script type="module" src="./js/app.js?v=5.28"></script>
+    <script type="module" src="./js/app.js?v=5.29"></script>
 </body>
 </html>
