@@ -985,7 +985,9 @@
         .nearby-card .btn-trade { margin-bottom: 0; padding: 13px 10px; font-size: 12px; }
         .leaflet-container { background: #101010; font-family: 'Noto Sans', sans-serif; }
         .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #111; color: white; border: 1px solid rgba(255,255,255,0.18); }
-        .smart-proposal { margin-top: 16px; display: grid; gap: 10px; }
+        .smart-proposal { margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .smart-proposal .btn-trade,
+        .smart-proposal .btn-secondary { margin: 0; padding: 13px 10px; font-size: 12px; }
         .share-preview-card { width: min(100%, 420px); background: #0A0A0A; border: 1px solid var(--border-color); border-radius: 6px; padding: 18px; margin: 14px auto 0; }
         /* === UX IMPROVEMENTS === */
         /* Larger touch targets for iOS */
@@ -1217,12 +1219,113 @@
         @media (max-width: 520px) {
             .social-stat-grid, .ranking-podium { grid-template-columns: 1fr; }
             .request-trade-grid, .trade-context-grid { grid-template-columns: 1fr; }
+            .smart-proposal { grid-template-columns: 1fr; }
+            .smart-trade-head { display: grid; grid-template-columns: 1fr; }
+            .smart-trade-score { grid-template-columns: 1fr; }
+            .smart-trade-badge { justify-self: start; }
             .social-friend-card { grid-template-columns: auto 1fr; }
             .social-friend-card .friend-match-badge { grid-column: 2; justify-self: start; margin: 8px 0 0; }
             .social-friend-card .friend-arrow { grid-column: 2; justify-self: end; margin-top: -32px; }
         }
 
         /* Friend trades view */
+        .smart-trade-card {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(200,212,0,0.24);
+            border-radius: 8px;
+            background:
+                linear-gradient(135deg, rgba(200,212,0,0.12), rgba(91,31,130,0.18)),
+                rgba(255,255,255,0.045);
+            padding: 16px;
+            margin-bottom: 18px;
+            box-shadow: 0 16px 36px rgba(0,0,0,0.28);
+        }
+        .smart-trade-card::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto;
+            height: 3px;
+            background: linear-gradient(90deg, var(--fifa-lime), var(--fifa-red), var(--fifa-purple));
+        }
+        .smart-trade-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        .smart-trade-head h3 {
+            margin: 0;
+            color: var(--text-main);
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 34px;
+            font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            line-height: 1;
+        }
+        .smart-trade-badge {
+            border: 1px solid rgba(200,212,0,0.38);
+            border-radius: 999px;
+            background: rgba(200,212,0,0.12);
+            color: var(--fifa-lime);
+            padding: 7px 10px;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .smart-trade-card p {
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.5;
+            margin: 0 0 12px;
+        }
+        .smart-trade-score {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .smart-trade-score span {
+            color: var(--fifa-lime);
+            font-size: 24px;
+            font-weight: 900;
+        }
+        .smart-trade-score small {
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        .smart-trade-grid { margin: 10px 0 12px; }
+        .smart-impact-list {
+            display: grid;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .smart-impact-list div {
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.24);
+            padding: 10px;
+        }
+        .smart-impact-list strong {
+            display: block;
+            color: var(--text-main);
+            font-size: 12px;
+            font-weight: 900;
+            margin-bottom: 3px;
+        }
+        .smart-impact-list span {
+            color: var(--text-muted);
+            font-size: 11px;
+            line-height: 1.4;
+        }
         .match-section-title {
             font-family: 'Bebas Neue', sans-serif;
             font-size: 18px;

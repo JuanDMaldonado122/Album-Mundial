@@ -620,8 +620,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.16</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.16</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.17</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.17</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
@@ -657,16 +657,19 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     };
 
     function buildTeamTradeProposal(candidate) {
-        const proposalSize = Math.min(candidate.iCanGet.length, candidate.iCanGive.length, 5);
-        if (proposalSize <= 0) return null;
-
-        return {
+        const recommendation = buildSmartTradeRecommendation({
             friendUid: candidate.uid,
             friendEmail: candidate.email,
             friendDisplayName: candidate.displayName || candidate.email,
-            teamName: candidate.teamName,
-            iCanGet: candidate.iCanGet.slice(0, proposalSize),
-            iCanGive: candidate.iCanGive.slice(0, proposalSize)
+            friendState: candidate.state || {},
+            iCanGet: candidate.iCanGet,
+            iCanGive: candidate.iCanGive
+        });
+
+        if (!recommendation) return null;
+        return {
+            ...recommendation.proposal,
+            teamName: candidate.teamName
         };
     }
 
@@ -700,10 +703,10 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         content.innerHTML = `
             <div class="friend-msg-box">Enfocado en ${escapeHtml(teamName)}: te faltan ${missingTeam.length} laminas. Ordenamos primero a quienes mas te pueden acercar a completarlo.</div>
             ${candidates.map(candidate => {
-                const proposalSize = Math.min(candidate.iCanGet.length, candidate.iCanGive.length, 5);
-                const canRequest = proposalSize > 0;
+                const proposal = buildTeamTradeProposal(candidate);
+                const canRequest = Boolean(proposal);
                 const actionCopy = canRequest
-                    ? `${proposalSize} x ${proposalSize} listo para solicitar.`
+                    ? `${proposal.iCanGet.length} x ${proposal.iCanGive.length} recomendado. ${proposal.reason || ''}`
                     : 'Te puede ayudar, pero aun no tienes repetidas compatibles para ofrecerle.';
 
                 return `
@@ -713,7 +716,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                                 <div class="request-title">${escapeHtml(candidate.displayName || candidate.email)}</div>
                                 <div class="request-copy">${escapeHtml(actionCopy)}</div>
                             </div>
-                            <div class="friend-match-badge">${candidate.iCanGet.length}</div>
+                            <div class="friend-match-badge">${canRequest ? escapeHtml(proposal.label || 'Match') : candidate.iCanGet.length}</div>
                         </div>
                         <div class="match-give">
                             <div class="match-section-title">Te puede dar</div>
@@ -768,10 +771,18 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                     teamName: name,
                     iCanGet,
                     iCanGive,
-                    proposalSize: Math.min(iCanGet.length, iCanGive.length, 5)
+                    proposalSize: Math.min(iCanGet.length, iCanGive.length, 5),
+                    smartScore: buildSmartTradeRecommendation({
+                        friendUid: friend.uid,
+                        friendEmail: friend.email,
+                        friendDisplayName: friend.displayName,
+                        friendState: friend.state || {},
+                        iCanGet,
+                        iCanGive
+                    })?.score || 0
                 };
             }).filter(candidate => candidate.iCanGet.length > 0)
-              .sort((a, b) => b.proposalSize - a.proposalSize || b.iCanGet.length - a.iCanGet.length);
+              .sort((a, b) => b.smartScore - a.smartScore || b.proposalSize - a.proposalSize || b.iCanGet.length - a.iCanGet.length);
 
             teamTradeCandidatesByUid = Object.fromEntries(candidates.map(candidate => [candidate.uid, candidate]));
             renderTeamTradeCandidates(name, missingTeam, candidates);
@@ -1561,16 +1572,110 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         return friendSummaries.filter(friend => memberIds.has(friend.uid));
     }
 
+    function getStickerTradeImpact(stickerId, state = {}) {
+        const team = getTeamForSticker(window.DB, stickerId);
+        if (!team) {
+            return {
+                score: 10,
+                label: 'Nueva lamina',
+                detail: 'Suma una lamina que falta en el album.',
+                teamName: 'Album',
+                missingBefore: 0,
+                missingAfter: 0,
+                completesTeam: false
+            };
+        }
+
+        const stickers = getTeamStickers(window.DB, team.code, team.isSpecial);
+        const owned = stickers.filter(id => (state[id] || 0) > 0).length;
+        const missingBefore = Math.max(stickers.length - owned, 1);
+        const missingAfter = Math.max(missingBefore - 1, 0);
+        let score = 18 + Math.max(0, stickers.length - missingBefore);
+
+        if (missingBefore === 1) score += 140;
+        else if (missingBefore <= 3) score += 82;
+        else if (missingBefore <= 5) score += 52;
+        else if (missingBefore <= 10) score += 24;
+
+        return {
+            score,
+            label: missingBefore === 1 ? 'Completa equipo' : missingBefore <= 5 ? 'Alta prioridad' : 'Buen avance',
+            detail: missingBefore === 1
+                ? `Completa ${team.name}.`
+                : `Te deja a ${missingAfter} de completar ${team.name}.`,
+            teamName: team.name,
+            missingBefore,
+            missingAfter,
+            completesTeam: missingBefore === 1
+        };
+    }
+
+    function buildSmartTradeRecommendation({ friendUid, friendEmail, friendDisplayName, friendState = {}, iCanGet, iCanGive }) {
+        const proposalSize = Math.min(iCanGet.length, iCanGive.length, 5);
+        if (proposalSize <= 0) return null;
+
+        const incoming = iCanGet
+            .map(id => ({ id, impact: getStickerTradeImpact(id, window.state) }))
+            .sort((a, b) => b.impact.score - a.impact.score || a.id.localeCompare(b.id));
+        const outgoing = iCanGive
+            .map(id => ({ id, impact: getStickerTradeImpact(id, friendState) }))
+            .sort((a, b) => b.impact.score - a.impact.score || a.id.localeCompare(b.id));
+        const selectedIncoming = incoming.slice(0, proposalSize);
+        const selectedOutgoing = outgoing.slice(0, proposalSize);
+        const completeImpact = selectedIncoming.find(item => item.impact.completesTeam);
+        const mainImpact = completeImpact || selectedIncoming[0];
+        const score = selectedIncoming.reduce((total, item) => total + item.impact.score, 0)
+            + selectedOutgoing.reduce((total, item) => total + item.impact.score * 0.35, 0)
+            + proposalSize * 12;
+        const label = completeImpact
+            ? 'Completa equipo'
+            : proposalSize >= 3
+                ? 'Canje perfecto'
+                : mainImpact?.impact.missingBefore <= 5
+                    ? 'Alta prioridad'
+                    : 'Buen canje';
+        const reason = completeImpact
+            ? `Con ${completeImpact.id} completas ${completeImpact.impact.teamName}.`
+            : mainImpact
+                ? `${mainImpact.id} te acerca a ${mainImpact.impact.teamName}; quedarías a ${mainImpact.impact.missingAfter} de completarlo.`
+                : `Ganas ${proposalSize} laminas nuevas sin perder progreso.`;
+
+        return {
+            label,
+            reason,
+            score: Math.round(score),
+            impactItems: selectedIncoming.slice(0, 3),
+            proposal: {
+                friendUid,
+                friendEmail,
+                friendDisplayName: friendDisplayName || friendEmail,
+                iCanGet: selectedIncoming.map(item => item.id),
+                iCanGive: selectedOutgoing.map(item => item.id),
+                reason,
+                label
+            }
+        };
+    }
+
     function getFriendInsights(friendSummaries, allStickers) {
         return friendSummaries.map(friend => {
             const { iCanGet, iCanGive } = getFriendTradeMatches(allStickers, window.state, friend.state || {});
             const progress = Math.round((friend.totalOwned / allStickers.length) * 1000) / 10;
+            const recommendation = buildSmartTradeRecommendation({
+                friendUid: friend.uid,
+                friendEmail: friend.email,
+                friendDisplayName: friend.displayName,
+                friendState: friend.state || {},
+                iCanGet,
+                iCanGive
+            });
 
             return {
                 ...friend,
                 iCanGet,
                 iCanGive,
                 balancedMatches: Math.min(iCanGet.length, iCanGive.length),
+                smartScore: recommendation?.score || 0,
                 progress
             };
         });
@@ -1586,7 +1691,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         }
 
         const bestFriend = insights.slice().sort((a, b) => b.totalOwned - a.totalOwned)[0];
-        const bestTrade = insights.slice().sort((a, b) => b.balancedMatches - a.balancedMatches || b.iCanGet.length - a.iCanGet.length)[0];
+        const bestTrade = insights.slice().sort((a, b) => b.smartScore - a.smartScore || b.balancedMatches - a.balancedMatches || b.iCanGet.length - a.iCanGet.length)[0];
         const totalCanGet = insights.reduce((total, friend) => total + friend.iCanGet.length, 0);
         const topThree = ranking.slice(0, 3);
 
@@ -1942,26 +2047,62 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         if (iCanGet.length === 0 && iCanGive.length === 0) {
             html = '<div class="friends-empty"><strong>Sin canjes posibles</strong>Por ahora no hay láminas que coincidan para intercambiar. Vuelve a revisar más tarde.</div>';
         } else {
-            const proposalSize = Math.min(iCanGet.length, iCanGive.length, 5);
-            window.smartProposalContext = {
+            const recommendation = buildSmartTradeRecommendation({
                 friendUid: fUid,
                 friendEmail: fEmail,
                 friendDisplayName: fDisplayName || fEmail,
-                iCanGet: iCanGet.slice(0, proposalSize),
-                iCanGive: iCanGive.slice(0, proposalSize)
-            };
+                friendState: fState || {},
+                iCanGet,
+                iCanGive
+            });
+            window.smartProposalContext = recommendation?.proposal || null;
+
+            html += recommendation ? `
+                <section class="smart-trade-card">
+                    <div class="smart-trade-head">
+                        <div>
+                            <div class="insight-kicker">Canje inteligente</div>
+                            <h3>Mejor propuesta</h3>
+                        </div>
+                        <div class="smart-trade-badge">${escapeHtml(recommendation.label)}</div>
+                    </div>
+                    <p>${escapeHtml(recommendation.reason)}</p>
+                    <div class="smart-trade-score">
+                        <span>${recommendation.proposal.iCanGet.length} x ${recommendation.proposal.iCanGive.length}</span>
+                        <small>${recommendation.score} pts de impacto</small>
+                    </div>
+                    <div class="request-trade-grid smart-trade-grid">
+                        <div>
+                            <div class="request-mini-label">Recibes</div>
+                            <div class="match-tags">${renderTradeChips(recommendation.proposal.iCanGet, 'give')}</div>
+                        </div>
+                        <div>
+                            <div class="request-mini-label">Das</div>
+                            <div class="match-tags">${renderTradeChips(recommendation.proposal.iCanGive, 'take')}</div>
+                        </div>
+                    </div>
+                    <div class="smart-impact-list">
+                        ${recommendation.impactItems.map(item => `
+                            <div>
+                                <strong>${escapeHtml(item.id)}</strong>
+                                <span>${escapeHtml(item.impact.detail)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="smart-proposal">
+                        <button class="btn-trade" data-action="send-trade-request">Enviar solicitud interna</button>
+                        <button class="btn-secondary" data-action="smart-proposal">Enviar por WhatsApp</button>
+                    </div>
+                </section>
+            ` : `
+                <div class="friend-msg-box">Hay coincidencias, pero todavía no hay un canje equilibrado: uno de los dos no tiene repetidas útiles para ofrecer.</div>
+            `;
 
             if (iCanGet.length > 0) {
-                html += `<div class="match-give"><div class="match-section-title">Ellos te pueden dar (${iCanGet.length})</div><div class="match-tags">${iCanGet.map(id => `<div class="match-tag give">${id}</div>`).join('')}</div></div>`;
+                html += `<div class="match-give"><div class="match-section-title">Te pueden dar (${iCanGet.length})</div><div class="match-tags">${iCanGet.map(id => `<div class="match-tag give">${escapeHtml(id)}</div>`).join('')}</div></div>`;
             }
             if (iCanGive.length > 0) {
-                html += `<div class="match-take"><div class="match-section-title">Tu les puedes dar (${iCanGive.length})</div><div class="match-tags">${iCanGive.map(id => `<div class="match-tag take">${id}</div>`).join('')}</div></div>`;
-            }
-            if (proposalSize > 0) {
-                html += `<div class="smart-proposal">
-                    <button class="btn-trade" data-action="send-trade-request">Enviar solicitud interna (${proposalSize} x ${proposalSize})</button>
-                    <button class="btn-secondary" data-action="smart-proposal">Enviar por WhatsApp</button>
-                </div>`;
+                html += `<div class="match-take"><div class="match-section-title">Tú puedes dar (${iCanGive.length})</div><div class="match-tags">${iCanGive.map(id => `<div class="match-tag take">${escapeHtml(id)}</div>`).join('')}</div></div>`;
             }
             // WhatsApp share button
             const msgLines = [];
@@ -1983,7 +2124,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             return;
         }
 
-        const msg = `Hola! Te propongo este canje del álbum Mundial 2026:\n\nYo te doy: ${proposal.iCanGive.join(', ')}\n\nTú me das: ${proposal.iCanGet.join(', ')}\n\n¿Te sirve?`;
+        const intro = proposal.reason ? `La app me recomienda este canje porque: ${proposal.reason}\n\n` : '';
+        const msg = `Hola! Te propongo este canje del álbum Mundial 2026:\n\n${intro}Yo te doy: ${proposal.iCanGive.join(', ')}\n\nTú me das: ${proposal.iCanGet.join(', ')}\n\n¿Te sirve?`;
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
     };
 
