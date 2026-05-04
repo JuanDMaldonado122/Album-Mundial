@@ -125,6 +125,10 @@ export function initMatchAudioControls(button) {
     updateButton();
 }
 
+export function isMatchAudioEnabled() {
+    return audioEnabled;
+}
+
 export function toggleMatchAudio() {
     audioEnabled = !audioEnabled;
     localStorage.setItem(AUDIO_STORAGE_KEY, audioEnabled ? 'true' : 'false');

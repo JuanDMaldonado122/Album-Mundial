@@ -12,7 +12,7 @@ import { auth, db } from "./services/firebaseService.js";
 import { addFriendByEmail, addFriendToGroup, createFriendGroup, getFriendGroups, getFriendSummaries, getFriendTradeMatches, getUserProfile, registerUserForFriendLookup, saveUserProfile } from "./services/friendsService.js";
 import { calculateDistanceKm, disableNearbyAvailability, getNearbyCollectors, saveNearbyAvailability } from "./services/nearbyService.js";
 import { addNotification, clearNotifications, formatNotificationTime, getNotifications, getUnreadNotificationCount, markAllNotificationsRead, markMilestoneNotified, wasMilestoneNotified } from "./services/notificationService.js";
-import { initMatchAudioControls, playUiSound, toggleMatchAudio } from "./services/audioService.js";
+import { initMatchAudioControls, isMatchAudioEnabled, playUiSound, toggleMatchAudio } from "./services/audioService.js";
 import { getAchievementDashboard, getTeamForSticker, isTeamComplete } from "./services/achievementService.js";
 import { createStickerEl, filterTeams, openSummaryView, openTeamView, renderGroupList, switchSummaryTab, toggleGroup } from "./ui/albumView.js";
 import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
@@ -39,6 +39,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     let suppressStickerAudio = false;
     let celebrationTimer = null;
     let deferredInstallPrompt = null;
+    const APP_VERSION = 'v5.31';
     const INSTALL_DISMISSED_KEY = 'album26-install-dismissed';
     const ONBOARDING_SEEN_KEY = 'album26-onboarding-seen';
     const SOCIAL_STARTED_KEY = 'album26-social-started';
@@ -362,6 +363,106 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         } catch (e) {
             status.textContent = 'No se pudo guardar el perfil. Revisa Firebase.';
         }
+    };
+
+    function getSettingsStatusItems() {
+        const notifications = currentUser ? getNotifications(currentUser.uid) : [];
+        const unread = currentUser ? getUnreadNotificationCount(currentUser.uid) : 0;
+        const locationCopy = myNearbyLocation
+            ? 'Activa para canjes cerca'
+            : window.isSecureContext
+                ? 'Pausada'
+                : 'Limitada en HTTP local';
+
+        return [
+            {
+                label: 'Conexion',
+                value: navigator.onLine ? 'En linea' : 'Sin conexion',
+                state: navigator.onLine ? 'good' : 'warn'
+            },
+            {
+                label: 'Cuenta',
+                value: currentUser ? 'Firebase activo' : 'Sin sesion',
+                state: currentUser ? 'good' : 'warn'
+            },
+            {
+                label: 'Sonido',
+                value: isMatchAudioEnabled() ? 'Modo gol activo' : 'Silenciado',
+                state: isMatchAudioEnabled() ? 'good' : 'muted'
+            },
+            {
+                label: 'Notificaciones',
+                value: notifications.length ? `${unread} nuevas / ${notifications.length} total` : 'Sin avisos',
+                state: unread > 0 ? 'warn' : 'good'
+            },
+            {
+                label: 'Ubicacion',
+                value: locationCopy,
+                state: myNearbyLocation ? 'good' : 'muted'
+            },
+            {
+                label: 'Instalacion',
+                value: isStandaloneApp() ? 'Instalada como app' : 'Lista para instalar',
+                state: isStandaloneApp() ? 'good' : 'warn'
+            }
+        ];
+    }
+
+    window.renderSettingsView = function() {
+        const name = document.getElementById('settings-display-name');
+        const email = document.getElementById('settings-email');
+        const version = document.getElementById('settings-version');
+        const statusList = document.getElementById('settings-status-list');
+        const soundButton = document.getElementById('settings-sound-toggle');
+        const locationHint = document.getElementById('settings-location-hint');
+
+        if (name) name.textContent = currentProfile.displayName || 'Coleccionista';
+        if (email) email.textContent = currentUser?.email || 'Sin cuenta activa';
+        if (version) version.textContent = APP_VERSION;
+        if (soundButton) soundButton.textContent = isMatchAudioEnabled() ? 'Apagar sonido' : 'Activar modo gol';
+        if (locationHint) {
+            locationHint.textContent = myNearbyLocation
+                ? 'Tu zona aproximada esta activa para encontrar canjes cercanos.'
+                : 'Activa la ubicacion desde Canjes Cerca cuando quieras aparecer en el ranking cercano.';
+        }
+
+        if (statusList) {
+            statusList.innerHTML = getSettingsStatusItems().map(item => `
+                <div class="settings-status-row">
+                    <span class="settings-dot ${item.state}"></span>
+                    <div>
+                        <strong>${item.label}</strong>
+                        <small>${item.value}</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+    };
+
+    window.openSettings = function() {
+        window.renderSettingsView();
+        const status = document.getElementById('settings-action-status');
+        if (status) status.textContent = '';
+        window.switchView('view-settings');
+    };
+
+    window.testSettingsSound = function() {
+        if (!isMatchAudioEnabled()) toggleMatchAudio();
+        playUiSound('packGoal');
+        window.renderSettingsView();
+    };
+
+    window.resetOnboardingGuide = function() {
+        localStorage.removeItem(ONBOARDING_SEEN_KEY);
+        const status = document.getElementById('settings-action-status');
+        if (status) status.textContent = 'Guia reiniciada. La puedes abrir de nuevo cuando quieras.';
+        window.renderSettingsView();
+    };
+
+    window.refreshSettings = function() {
+        window.renderSettingsView();
+        const status = document.getElementById('settings-action-status');
+        if (status) status.textContent = 'Estado actualizado.';
     };
 
 
@@ -854,8 +955,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.30</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.30</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">${APP_VERSION}</span>`
+                : `Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">${APP_VERSION}</span>`;
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
@@ -1459,6 +1560,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'open-notifications': 'nav',
                 'open-pack': 'nav',
                 'open-profile': 'nav',
+                'open-settings': 'nav',
                 'open-scanner': 'nav',
                 'open-share': 'nav',
                 'open-summary': 'nav',
@@ -1494,6 +1596,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'onboarding-primary': window.onboardingPrimary,
                 'open-scanner': window.openScanner,
                 'open-share': () => window.switchView('view-share'),
+                'open-settings': window.openSettings,
                 'open-summary': window.openSummary,
                 'open-notifications': window.openNotifications,
                 'open-profile': window.openProfile,
@@ -1516,6 +1619,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'share-repeated': window.shareRepeated,
                 'smart-proposal': window.sendSmartProposal,
                 'show-onboarding': () => window.showOnboarding(true),
+                'refresh-settings': window.refreshSettings,
+                'reset-onboarding-guide': window.resetOnboardingGuide,
                 'switch-home-tab': (button) => window.switchHomeTab(button.dataset.homeTab),
                 'team-trade-whatsapp': (button) => window.sendTeamTradeWhatsapp(button.dataset.uid),
                 'switch-friend-group': (button) => {
@@ -1527,6 +1632,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                     if (help) help.hidden = !help.hidden;
                 },
                 'toggle-audio': toggleMatchAudio,
+                'test-settings-sound': window.testSettingsSound,
                 'toggle-nearby-profile': (button) => {
                     if (event.target.closest('[data-action="send-nearby-request"]')) return;
                     const profile = document.getElementById(`nearby-profile-${button.dataset.uid}`);
@@ -1541,10 +1647,13 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'toggle-group': (button) => window.toggleGroup(button.dataset.groupId)
             };
 
-            if (actionButton.dataset.action !== 'toggle-audio') {
+            if (!['toggle-audio', 'test-settings-sound'].includes(actionButton.dataset.action)) {
                 playUiSound(soundByAction[actionButton.dataset.action] || 'tap');
             }
             actions[actionButton.dataset.action]?.(actionButton);
+            if (actionButton.dataset.action === 'toggle-audio') {
+                window.renderSettingsView?.();
+            }
             if (actionButton.dataset.action === 'open-profile') {
                 window.finishOnboarding?.();
             }

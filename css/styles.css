@@ -922,6 +922,160 @@
             background: var(--fifa-lime);
             color: #0A0A0A;
         }
+        .settings-hero,
+        .settings-panel {
+            border: 1px solid rgba(255,255,255,0.13);
+            border-radius: 8px;
+            background:
+                linear-gradient(135deg, rgba(91,31,130,0.16), rgba(204,0,0,0.08)),
+                rgba(255,255,255,0.045);
+            padding: 18px;
+            margin-bottom: 14px;
+            box-shadow: 0 14px 34px rgba(0,0,0,0.2);
+        }
+        .settings-hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 14px;
+            border-color: rgba(200,212,0,0.24);
+        }
+        .settings-kicker {
+            color: var(--fifa-lime);
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .settings-hero h2,
+        .settings-panel h3 {
+            color: var(--text-main);
+            margin: 0;
+            overflow-wrap: anywhere;
+        }
+        .settings-hero h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 34px;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+        .settings-hero p,
+        .settings-hint {
+            color: var(--text-muted);
+            font-size: 12px;
+            line-height: 1.45;
+            margin: 4px 0 0;
+            overflow-wrap: anywhere;
+        }
+        .settings-version {
+            min-width: 76px;
+            border: 1px solid rgba(200,212,0,0.28);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.28);
+            padding: 10px;
+            text-align: center;
+        }
+        .settings-version span,
+        .settings-status-row small {
+            display: block;
+            color: var(--text-muted);
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .settings-version strong {
+            display: block;
+            color: var(--fifa-lime);
+            font-size: 15px;
+            margin-top: 3px;
+        }
+        .settings-panel-head {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+        .settings-icon-button {
+            width: 42px;
+            height: 42px;
+            border: 1px solid rgba(255,255,255,0.16);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.28);
+            color: var(--fifa-lime);
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+        }
+        .settings-icon-button svg {
+            width: 19px;
+            height: 19px;
+            stroke: currentColor;
+        }
+        .settings-status-list {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .settings-status-row {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px;
+            align-items: center;
+            min-width: 0;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.24);
+            padding: 11px;
+        }
+        .settings-status-row strong {
+            display: block;
+            color: var(--text-main);
+            font-size: 13px;
+            margin-bottom: 2px;
+        }
+        .settings-status-row small {
+            line-height: 1.35;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        .settings-dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 999px;
+            background: var(--text-muted);
+            box-shadow: 0 0 0 4px rgba(255,255,255,0.05);
+        }
+        .settings-dot.good {
+            background: var(--fifa-lime);
+            box-shadow: 0 0 0 4px rgba(200,212,0,0.12);
+        }
+        .settings-dot.warn {
+            background: var(--fifa-red);
+            box-shadow: 0 0 0 4px rgba(224,0,0,0.13);
+        }
+        .settings-dot.muted {
+            background: rgba(255,255,255,0.38);
+        }
+        .settings-action-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .settings-action-grid .btn-secondary,
+        .settings-action-grid .btn-trade {
+            margin: 0;
+            min-height: 48px;
+            padding: 12px 10px;
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+        .settings-panel .mini-feedback {
+            margin-top: 12px;
+            min-height: 18px;
+        }
         .bottom-nav {
             position: sticky;
             bottom: calc(8px + env(safe-area-inset-bottom));
@@ -2217,6 +2371,10 @@
             .profile-stats-grid span { font-size: 8px; letter-spacing: 0.45px; }
             .profile-identity-grid { grid-template-columns: 1fr; }
             .profile-checklist { grid-template-columns: 1fr; }
+            .settings-hero,
+            .settings-status-list,
+            .settings-action-grid { grid-template-columns: 1fr; }
+            .settings-version { justify-self: start; }
             .quick-start-item { grid-template-columns: auto 1fr; }
             .quick-start-action { grid-column: 2; justify-self: start; }
             .album-priority-panel h2 { font-size: 27px; }

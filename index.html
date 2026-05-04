@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="./css/styles.css?v=5.30">
+    <link rel="stylesheet" href="./css/styles.css?v=5.31">
 </head>
 <body>
 
@@ -68,7 +68,7 @@
     <div id="view-home" class="view">
         <header>
             <h1>Álbum 26</h1>
-            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.30</span></p>
+            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.31</span></p>
         </header>
 
         <div class="home-tabs">
@@ -238,6 +238,7 @@
                         <span>Notificaciones</span>
                         <span class="notification-badge" id="notification-badge" hidden>0</span>
                     </button>
+                    <button class="btn-secondary" data-action="open-settings">Ajustes</button>
                     <button class="btn-secondary" data-action="show-onboarding">Ver Guía</button>
                     <button class="btn-secondary" data-action="logout">Cerrar Sesión</button>
                 </div>
@@ -321,6 +322,67 @@
             <button class="btn-primary" data-action="save-profile">Guardar Perfil</button>
             <div id="profile-edit-status" class="mini-feedback"></div>
         </div>
+    </div>
+
+    <!-- SETTINGS VIEW -->
+    <div id="view-settings" class="view">
+        <div class="nav-bar">
+            <button class="btn-back" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <h2 class="nav-title">Ajustes</h2>
+        </div>
+        <section class="settings-hero">
+            <div>
+                <div class="settings-kicker">Centro de control</div>
+                <h2 id="settings-display-name">Coleccionista</h2>
+                <p id="settings-email">Sin cuenta activa</p>
+            </div>
+            <div class="settings-version">
+                <span>Version</span>
+                <strong id="settings-version">v5.31</strong>
+            </div>
+        </section>
+        <section class="settings-panel">
+            <div class="settings-panel-head">
+                <div>
+                    <div class="settings-kicker">Estado de la app</div>
+                    <h3>Todo listo para jugar</h3>
+                </div>
+                <button class="settings-icon-button" type="button" data-action="refresh-settings" aria-label="Actualizar estado">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2"/><path d="M3 12A9 9 0 0 1 18.5 5.8"/><path d="M18 2v4h-4"/><path d="M6 22v-4h4"/></svg>
+                </button>
+            </div>
+            <div class="settings-status-list" id="settings-status-list"></div>
+        </section>
+        <section class="settings-panel">
+            <div class="settings-panel-head">
+                <div>
+                    <div class="settings-kicker">Experiencia</div>
+                    <h3>Sonido, guia y permisos</h3>
+                </div>
+            </div>
+            <div class="settings-action-grid">
+                <button class="btn-secondary" id="settings-sound-toggle" data-action="toggle-audio">Activar modo gol</button>
+                <button class="btn-secondary" data-action="test-settings-sound">Probar celebracion</button>
+                <button class="btn-secondary" data-action="show-onboarding">Ver guia inicial</button>
+                <button class="btn-secondary" data-action="reset-onboarding-guide">Reiniciar guia</button>
+            </div>
+            <p class="settings-hint" id="settings-location-hint">Activa la ubicacion desde Canjes Cerca cuando quieras aparecer en el ranking cercano.</p>
+        </section>
+        <section class="settings-panel">
+            <div class="settings-panel-head">
+                <div>
+                    <div class="settings-kicker">Atajos</div>
+                    <h3>Lo que mas se toca</h3>
+                </div>
+            </div>
+            <div class="settings-action-grid">
+                <button class="btn-trade" data-action="open-profile">Editar perfil</button>
+                <button class="btn-secondary" data-action="open-notifications">Notificaciones</button>
+                <button class="btn-secondary" data-action="open-nearby">Canjes cerca</button>
+                <button class="btn-secondary" data-action="install-app">Instalar app</button>
+            </div>
+            <div id="settings-action-status" class="mini-feedback"></div>
+        </section>
     </div>
 
     <!-- NOTIFICATIONS VIEW -->
@@ -641,6 +703,6 @@
 </button>
 
 <!-- FIREBASE & LOGIC -->
-    <script type="module" src="./js/app.js?v=5.30"></script>
+    <script type="module" src="./js/app.js?v=5.31"></script>
 </body>
 </html>
