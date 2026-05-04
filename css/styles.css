@@ -319,6 +319,74 @@
         .home-section-actions .btn-secondary {
             margin: 0;
         }
+        .album-scan-card {
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 14px;
+            align-items: center;
+            border: 1px solid rgba(200,212,0,0.26);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 14px;
+            background:
+                linear-gradient(135deg, rgba(200,212,0,0.12), rgba(204,0,0,0.09) 48%, rgba(91,31,130,0.15)),
+                rgba(255,255,255,0.045);
+            box-shadow: 0 16px 34px rgba(0,0,0,0.28);
+        }
+        .album-scan-card::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto;
+            height: 3px;
+            background: linear-gradient(90deg, var(--fifa-red), var(--fifa-lime), var(--fifa-purple));
+        }
+        .album-scan-icon {
+            width: 54px;
+            height: 54px;
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            color: var(--fifa-lime);
+            background: rgba(200,212,0,0.1);
+            border: 1px solid rgba(200,212,0,0.28);
+        }
+        .album-scan-icon svg {
+            width: 29px;
+            height: 29px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .album-scan-card h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 34px;
+            line-height: 1;
+            letter-spacing: 2px;
+            font-weight: 400;
+            text-transform: uppercase;
+            margin: 0 0 6px;
+        }
+        .album-scan-card p {
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.45;
+            margin: 0;
+        }
+        .album-scan-actions {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .album-scan-actions .btn-primary,
+        .album-scan-actions .btn-secondary {
+            margin: 0;
+            min-height: 54px;
+        }
         .hub-card,
         .profile-hub {
             border: 1px solid rgba(255,255,255,0.14);
@@ -1508,6 +1576,9 @@
         .podium-name { color: var(--text-main); font-size: 12px; font-weight: 900; margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .podium-score { color: var(--text-muted); font-size: 11px; margin-top: 4px; }
         @media (max-width: 520px) {
+            .album-scan-card { grid-template-columns: 1fr; }
+            .album-scan-icon { width: 50px; height: 50px; }
+            .album-scan-actions { grid-template-columns: 1fr; }
             .social-stat-grid, .ranking-podium { grid-template-columns: 1fr; }
             .request-trade-grid, .trade-context-grid { grid-template-columns: 1fr; }
             .smart-proposal { grid-template-columns: 1fr; }

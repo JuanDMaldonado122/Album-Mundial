@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="./css/styles.css?v=5.22">
+    <link rel="stylesheet" href="./css/styles.css?v=5.23">
 </head>
 <body>
 
@@ -68,7 +68,7 @@
     <div id="view-home" class="view">
         <header>
             <h1>Álbum 26</h1>
-            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.22</span></p>
+            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.23</span></p>
         </header>
 
         <div class="home-tabs">
@@ -113,13 +113,26 @@
             </section>
 
             <section class="home-tab-panel" data-home-panel="album">
+                <section class="album-scan-card">
+                    <div class="album-scan-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    </div>
+                    <div>
+                        <div class="hub-kicker">Sumar láminas</div>
+                        <h2>Escanea o carga tu sobre</h2>
+                        <p>Usa la cámara para leer el código de una lámina o pega varios códigos si acabas de abrir un paquete.</p>
+                    </div>
+                    <div class="album-scan-actions">
+                        <button class="btn-primary btn-flex" data-action="open-scanner">Escanear lámina</button>
+                        <button class="btn-secondary btn-flex" data-action="open-pack">Agregar sobre</button>
+                    </div>
+                </section>
                 <div class="home-section-actions">
-                    <button class="btn-secondary btn-flex" data-action="open-pack">Agregar Sobre</button>
                     <button class="btn-primary btn-flex" data-action="open-summary">Resumen Detallado</button>
                     <button class="btn-primary btn-flex" data-action="open-share">Compartir y PDF</button>
                 </div>
                 <div class="inline-help tool-help" id="pro-tools-help" hidden>
-                    <div><strong>Agregar sobre</strong> registra varias láminas de una vez. Pegas códigos como <span>ARG 1</span>, <span>BRA 5</span> o <span>FWC 8</span>, y la app los suma al álbum.</div>
+                    <div><strong>Escanear lámina</strong> usa la cámara para leer códigos. <strong>Agregar sobre</strong> registra varias de una vez con códigos como <span>ARG 1</span>, <span>BRA 5</span> o <span>FWC 8</span>.</div>
                 </div>
 
                 <section class="achievement-panel" id="achievement-panel">
@@ -585,6 +598,6 @@
 </button>
 
 <!-- FIREBASE & LOGIC -->
-<script type="module" src="./js/app.js?v=5.22"></script>
+<script type="module" src="./js/app.js?v=5.23"></script>
 </body>
 </html>
