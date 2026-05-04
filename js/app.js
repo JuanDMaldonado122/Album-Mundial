@@ -40,6 +40,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     let deferredInstallPrompt = null;
     const INSTALL_DISMISSED_KEY = 'album26-install-dismissed';
     const ONBOARDING_SEEN_KEY = 'album26-onboarding-seen';
+    const SOCIAL_STARTED_KEY = 'album26-social-started';
     window.smartProposalContext = null;
 
     /* === AUTHENTICATION LOGIC === */
@@ -376,6 +377,110 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         window.clearTimeout(celebrationTimer);
     };
 
+    function getSocialStartedKey() {
+        return currentUser ? `${SOCIAL_STARTED_KEY}-${currentUser.uid}` : SOCIAL_STARTED_KEY;
+    }
+
+    function markSocialStarted() {
+        if (!currentUser) return;
+        localStorage.setItem(getSocialStartedKey(), 'true');
+        renderQuickStartPanel();
+    }
+
+    function getQuickStartSteps() {
+        const stats = getAlbumStats(window.state || {});
+        const hasProfile = Boolean(currentProfile.displayName && (currentProfile.city || currentProfile.zone || currentProfile.favoriteTeam || currentProfile.bio));
+        const socialStarted = localStorage.getItem(getSocialStartedKey()) === 'true'
+            || friendGroups.some(group => Object.keys(group.members || {}).length > 0);
+
+        return [
+            {
+                id: 'profile',
+                done: hasProfile,
+                title: 'Perfil con personalidad',
+                detail: hasProfile ? 'Tu apodo ya tiene contexto para rankings y canjes.' : 'Agrega ciudad, zona o equipo favorito para que otros te ubiquen mejor.',
+                action: 'open-profile',
+                actionLabel: hasProfile ? 'Editar' : 'Completar'
+            },
+            {
+                id: 'stickers',
+                done: stats.unique > 0,
+                title: 'Primeras láminas',
+                detail: stats.unique > 0 ? `Ya tienes ${stats.unique} únicas en el álbum.` : 'Carga un sobre o abre un equipo para marcar tus primeras láminas.',
+                action: 'open-pack',
+                actionLabel: stats.unique > 0 ? 'Sumar' : 'Agregar'
+            },
+            {
+                id: 'friends',
+                done: socialStarted,
+                title: 'Tu gente invitada',
+                detail: socialStarted ? 'Ya empezaste la parte social del álbum.' : 'Invita amigos o arma un grupo familiar para comparar progreso.',
+                action: 'open-friends',
+                actionLabel: socialStarted ? 'Ver' : 'Invitar'
+            },
+            {
+                id: 'trades',
+                done: stats.duplicates > 0,
+                title: 'Material para canjear',
+                detail: stats.duplicates > 0 ? `Tienes ${stats.duplicates} repetidas para buscar canjes inteligentes.` : 'Cuando tengas repetidas, la app podrá recomendar propuestas.',
+                action: 'open-friends',
+                actionLabel: stats.duplicates > 0 ? 'Buscar' : 'Ver'
+            }
+        ];
+    }
+
+    function renderQuickStartPanel() {
+        if (!currentUser) return;
+
+        const steps = getQuickStartSteps();
+        const doneCount = steps.filter(step => step.done).length;
+        const percent = Math.round((doneCount / steps.length) * 100);
+        const list = document.getElementById('quick-start-list');
+        const score = document.getElementById('quick-start-score');
+        const bar = document.getElementById('quick-start-bar');
+        const title = document.getElementById('quick-start-title');
+        const onboardingTitle = document.getElementById('onboarding-title');
+        const onboardingCopy = document.getElementById('onboarding-copy');
+        const onboardingScore = document.getElementById('onboarding-progress-score');
+        const onboardingBar = document.getElementById('onboarding-progress-bar');
+        const primary = document.getElementById('onboarding-primary');
+        const nextStep = steps.find(step => !step.done) || steps[steps.length - 1];
+
+        if (title) title.textContent = doneCount === steps.length ? 'Listo para canjear' : 'Tu álbum, listo para jugar';
+        if (score) score.textContent = `${doneCount}/${steps.length}`;
+        if (bar) bar.style.width = `${percent}%`;
+        if (onboardingScore) onboardingScore.textContent = `${doneCount}/${steps.length}`;
+        if (onboardingBar) onboardingBar.style.width = `${percent}%`;
+        if (onboardingTitle) onboardingTitle.textContent = currentProfile.displayName ? `Hola, ${currentProfile.displayName}` : 'Que empiece el álbum';
+        if (onboardingCopy) {
+            onboardingCopy.textContent = doneCount === steps.length
+                ? 'Tu base está lista. Ahora puedes enfocarte en completar equipos y cerrar canjes inteligentes.'
+                : `Te falta ${steps.length - doneCount} paso${steps.length - doneCount === 1 ? '' : 's'} para dejar el álbum bien armado.`;
+        }
+        if (primary) {
+            primary.textContent = nextStep.done ? 'Ver canjes' : nextStep.actionLabel;
+            primary.dataset.nextAction = nextStep.action;
+        }
+
+        if (list) {
+            list.innerHTML = steps.map(step => `
+                <div class="quick-start-item ${step.done ? 'is-done' : ''}">
+                    <div class="quick-start-check">${step.done ? '✓' : '•'}</div>
+                    <div>
+                        <strong>${escapeHtml(step.title)}</strong>
+                        <small>${escapeHtml(step.detail)}</small>
+                    </div>
+                    <button class="quick-start-action" data-action="${step.action}">${escapeHtml(step.actionLabel)}</button>
+                </div>
+            `).join('');
+        }
+
+        steps.forEach(step => {
+            const element = document.querySelector(`[data-onboarding-step="${step.id}"]`);
+            if (element) element.classList.toggle('is-done', step.done);
+        });
+    }
+
     function maybeShowOnboarding() {
         if (!currentUser || localStorage.getItem(ONBOARDING_SEEN_KEY) === 'true') return;
         window.setTimeout(() => window.showOnboarding(false), 450);
@@ -385,6 +490,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const overlay = document.getElementById('onboarding-overlay');
         if (!overlay) return;
         if (force) localStorage.removeItem(ONBOARDING_SEEN_KEY);
+        renderQuickStartPanel();
         overlay.hidden = false;
     };
 
@@ -392,6 +498,15 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         localStorage.setItem(ONBOARDING_SEEN_KEY, 'true');
         const overlay = document.getElementById('onboarding-overlay');
         if (overlay) overlay.hidden = true;
+    };
+
+    window.onboardingPrimary = function(button) {
+        const nextAction = button?.dataset.nextAction || getQuickStartSteps().find(step => !step.done)?.action || 'open-friends';
+        window.finishOnboarding();
+        if (nextAction === 'open-profile') window.openProfile();
+        else if (nextAction === 'open-pack') window.openPackMode();
+        else if (nextAction === 'open-friends') window.openFriends();
+        else window.goHome();
     };
 
     function maybeCelebrateTeamCompletion(stickerId, previousState) {
@@ -519,6 +634,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         document.getElementById('stat-pct').innerText = `${stats.percentage}% Listo`;
         document.getElementById('progress-bar').style.width = `${stats.percentage}%`;
         window.renderNotificationBadge();
+        renderQuickStartPanel();
         renderAchievements();
         renderActivityCenter();
     };
@@ -620,8 +736,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.17</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.17</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.18</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.18</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
@@ -1254,6 +1370,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'open-chat': (button) => window.openTradeChat(button.dataset.requestId),
                 'open-nearby': window.openNearby,
                 'open-pack': window.openPackMode,
+                'onboarding-primary': window.onboardingPrimary,
                 'open-scanner': window.openScanner,
                 'open-share': () => window.switchView('view-share'),
                 'open-summary': window.openSummary,
@@ -1487,6 +1604,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
     window.shareFriendInvite = function() {
         if (!currentUser) return;
+        markSocialStarted();
         const msg = getFriendInviteMessage();
         const box = renderFriendInviteText(true);
         const encoded = encodeURIComponent(msg);
@@ -1512,6 +1630,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
     window.copyFriendInvite = async function() {
         if (!currentUser) return;
+        markSocialStarted();
         const msg = getFriendInviteMessage();
         const box = renderFriendInviteText(true);
 
@@ -1861,6 +1980,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         try {
             const group = await createFriendGroup(currentUser, name);
             friendGroups.push(group);
+            markSocialStarted();
             activeFriendGroupId = group.id;
             input.value = '';
             pushNotification({
@@ -1909,6 +2029,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
 
             input.value = '';
             await addFriendToGroup(currentUser, selectedGroupId, result.friendUid, result.email);
+            markSocialStarted();
             activeFriendGroupId = selectedGroupId;
             pushNotification({
                 title: 'Amigo agregado',

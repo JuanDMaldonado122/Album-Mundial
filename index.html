@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="./css/styles.css?v=5.17">
+    <link rel="stylesheet" href="./css/styles.css?v=5.18">
 </head>
 <body>
 
@@ -68,7 +68,7 @@
     <div id="view-home" class="view">
         <header>
             <h1>Álbum 26</h1>
-            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.17</span></p>
+            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.18</span></p>
         </header>
 
         <section class="install-card" id="install-card" hidden>
@@ -123,6 +123,21 @@
                 <span class="user-badge" data-action="logout">Cerrar Sesión</span>
             </div>
         </div>
+
+        <section class="quick-start-panel" id="quick-start-panel">
+            <div class="quick-start-head">
+                <div>
+                    <div class="quick-start-kicker">Arranque</div>
+                    <h2 id="quick-start-title">Tu álbum, listo para jugar</h2>
+                </div>
+                <button class="quick-start-info" type="button" data-action="show-onboarding" aria-label="Ver guía inicial">i</button>
+            </div>
+            <div class="quick-start-progress">
+                <div class="quick-start-track"><span id="quick-start-bar"></span></div>
+                <div class="quick-start-score" id="quick-start-score">0/4</div>
+            </div>
+            <div class="quick-start-list" id="quick-start-list"></div>
+        </section>
 
         <section class="achievement-panel" id="achievement-panel">
             <div class="achievement-header">
@@ -518,29 +533,33 @@
 
 <div class="onboarding-overlay" id="onboarding-overlay" hidden>
     <div class="onboarding-card">
-        <div class="onboarding-kicker">Primeros pasos</div>
-        <h2>Que empiece el álbum</h2>
-        <p>En menos de un minuto dejas todo listo para llenar, comparar y canjear con tu gente.</p>
+        <div class="onboarding-kicker" id="onboarding-kicker">Primeros pasos</div>
+        <h2 id="onboarding-title">Que empiece el álbum</h2>
+        <p id="onboarding-copy">En menos de un minuto dejas todo listo para llenar, comparar y canjear con tu gente.</p>
+        <div class="onboarding-progress">
+            <div class="quick-start-track"><span id="onboarding-progress-bar"></span></div>
+            <div class="quick-start-score" id="onboarding-progress-score">0/4</div>
+        </div>
         <div class="onboarding-steps">
-            <div class="onboarding-step">
+            <div class="onboarding-step" data-onboarding-step="profile">
                 <span>1</span>
                 <div><strong>Completa tu perfil</strong><small>Apodo, ciudad y estilo de canje para que otros te reconozcan.</small></div>
             </div>
-            <div class="onboarding-step">
+            <div class="onboarding-step" data-onboarding-step="stickers">
                 <span>2</span>
                 <div><strong>Agrega láminas</strong><small>Abre un equipo, toca los códigos o usa Agregar Sobre para cargar varias.</small></div>
             </div>
-            <div class="onboarding-step">
+            <div class="onboarding-step" data-onboarding-step="friends">
                 <span>3</span>
                 <div><strong>Invita amigos</strong><small>Crea grupos y comparte la invitación para comparar progreso.</small></div>
             </div>
-            <div class="onboarding-step">
+            <div class="onboarding-step" data-onboarding-step="trades">
                 <span>4</span>
                 <div><strong>Busca canjes</strong><small>Desde un equipo o desde Amigos, la app te muestra oportunidades reales.</small></div>
             </div>
         </div>
         <div class="onboarding-actions">
-            <button class="btn-trade" data-action="finish-onboarding">Estoy listo</button>
+            <button class="btn-trade" data-action="onboarding-primary" id="onboarding-primary">Empezar</button>
             <button class="btn-secondary" data-action="open-profile">Editar perfil</button>
         </div>
     </div>
@@ -552,6 +571,6 @@
 </button>
 
 <!-- FIREBASE & LOGIC -->
-<script type="module" src="./js/app.js?v=5.17"></script>
+<script type="module" src="./js/app.js?v=5.18"></script>
 </body>
 </html>
