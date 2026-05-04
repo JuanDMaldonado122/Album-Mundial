@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="./css/styles.css?v=5.19">
+    <link rel="stylesheet" href="./css/styles.css?v=5.20">
 </head>
 <body>
 
@@ -68,7 +68,7 @@
     <div id="view-home" class="view">
         <header>
             <h1>Álbum 26</h1>
-            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.19</span></p>
+            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.20</span></p>
         </header>
 
         <div class="home-tabs">
@@ -211,10 +211,22 @@
         </div>
 
         <nav class="bottom-nav" aria-label="Navegación principal">
-            <button class="bottom-nav-item active" type="button" data-action="switch-home-tab" data-tab="inicio">Inicio</button>
-            <button class="bottom-nav-item" type="button" data-action="switch-home-tab" data-tab="album">Álbum</button>
-            <button class="bottom-nav-item" type="button" data-action="switch-home-tab" data-tab="canjes">Canjes</button>
-            <button class="bottom-nav-item" type="button" data-action="switch-home-tab" data-tab="perfil">Perfil</button>
+            <button class="bottom-nav-item active" type="button" data-action="switch-home-tab" data-home-tab="inicio" aria-label="Ir a inicio">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20h14v-9.5"/><path d="M9 20v-6h6v6"/></svg>
+                <span>Inicio</span>
+            </button>
+            <button class="bottom-nav-item" type="button" data-action="switch-home-tab" data-home-tab="album" aria-label="Ir al álbum">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2V4a1 1 0 0 1 1-1Z"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h5"/></svg>
+                <span>Álbum</span>
+            </button>
+            <button class="bottom-nav-item" type="button" data-action="switch-home-tab" data-home-tab="canjes" aria-label="Ir a canjes">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3"/><path d="M17 17H6l3 3"/><path d="M18 7l-3 3"/><path d="M6 17l3-3"/></svg>
+                <span>Canjes</span>
+            </button>
+            <button class="bottom-nav-item" type="button" data-action="switch-home-tab" data-home-tab="perfil" aria-label="Ir al perfil">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="4"/></svg>
+                <span>Perfil</span>
+            </button>
         </nav>
     </div>
 
@@ -573,6 +585,6 @@
 </button>
 
 <!-- FIREBASE & LOGIC -->
-<script type="module" src="./js/app.js?v=5.19"></script>
+<script type="module" src="./js/app.js?v=5.20"></script>
 </body>
 </html>

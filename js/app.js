@@ -726,7 +726,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             panel.classList.toggle('active', panel.dataset.homePanel === tab);
         });
         document.querySelectorAll('[data-action="switch-home-tab"]').forEach(button => {
-            button.classList.toggle('active', button.dataset.tab === tab);
+            button.classList.toggle('active', button.dataset.homeTab === tab);
+            button.setAttribute('aria-current', button.dataset.homeTab === tab ? 'page' : 'false');
         });
         if (tab === 'album') filterTeams();
         window.scrollTo(0, 0);
@@ -750,8 +751,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.19</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.19</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.20</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.20</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
@@ -1332,7 +1333,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         });
 
         document.addEventListener('click', (event) => {
-            const tabButton = event.target.closest('[data-tab]');
+            const tabButton = event.target.closest('.summary-tabs [data-tab]');
             if (tabButton) {
                 window.switchTab(tabButton.dataset.tab);
                 return;
@@ -1409,7 +1410,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'share-repeated': window.shareRepeated,
                 'smart-proposal': window.sendSmartProposal,
                 'show-onboarding': () => window.showOnboarding(true),
-                'switch-home-tab': (button) => window.switchHomeTab(button.dataset.tab),
+                'switch-home-tab': (button) => window.switchHomeTab(button.dataset.homeTab),
                 'team-trade-whatsapp': (button) => window.sendTeamTradeWhatsapp(button.dataset.uid),
                 'switch-friend-group': (button) => {
                     activeFriendGroupId = button.dataset.groupId || 'all';
