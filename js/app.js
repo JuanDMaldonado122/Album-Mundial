@@ -804,8 +804,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.27</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.27</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.28</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.28</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
@@ -1873,6 +1873,43 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         });
     }
 
+    function getWantedStickerHighlights(insights) {
+        const wanted = new Map();
+
+        insights.forEach(friend => {
+            friend.iCanGet.forEach(id => {
+                const current = wanted.get(id) || { id, friends: new Set() };
+                current.friends.add(getDisplayName(friend));
+                wanted.set(id, current);
+            });
+        });
+
+        return [...wanted.values()]
+            .map(item => ({ id: item.id, count: item.friends.size }))
+            .sort((a, b) => b.count - a.count || a.id.localeCompare(b.id))
+            .slice(0, 5);
+    }
+
+    function getUsefulDuplicateHighlights(allStickers, insights) {
+        return allStickers
+            .filter(id => (window.state[id] || 0) > 1)
+            .map(id => {
+                const demand = insights.filter(friend => (friend.state?.[id] || 0) === 0).length;
+                return { id, extras: (window.state[id] || 0) - 1, demand };
+            })
+            .filter(item => item.demand > 0)
+            .sort((a, b) => b.demand - a.demand || b.extras - a.extras || a.id.localeCompare(b.id))
+            .slice(0, 5);
+    }
+
+    function renderTradeInsightRows(items, emptyCopy, renderItem) {
+        if (!items.length) {
+            return `<div class="trade-empty-line">${escapeHtml(emptyCopy)}</div>`;
+        }
+
+        return items.map(renderItem).join('');
+    }
+
     async function renderTradeHomePanel() {
         const panel = document.getElementById('trade-home-panel');
         if (!panel || !currentUser) return;
@@ -1967,6 +2004,19 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             const title = recommendation ? 'Mejor jugada' : 'Buen candidato';
             const reason = recommendation?.reason || `${getDisplayName(bestTrade)} puede ayudarte con ${bestTrade.iCanGet.length} láminas.`;
 
+            const topHelpers = insights
+                .filter(friend => friend.iCanGet.length > 0 || friend.balancedMatches > 0)
+                .sort((a, b) => b.smartScore - a.smartScore || b.balancedMatches - a.balancedMatches || b.iCanGet.length - a.iCanGet.length)
+                .slice(0, 3);
+            const wantedHighlights = getWantedStickerHighlights(insights);
+            const usefulDuplicates = getUsefulDuplicateHighlights(allStickers, insights);
+            const activeRequestPreview = tradeRequests
+                .filter(request => request.status !== 'rejected')
+                .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+                .slice(0, 3);
+            const receivePreview = recommendation?.proposal?.iCanGet || bestTrade.iCanGet.slice(0, 5);
+            const givePreview = recommendation?.proposal?.iCanGive || bestTrade.iCanGive.slice(0, 5);
+
             panel.innerHTML = `
                 <section class="trade-opportunity-card">
                     <div class="trade-opportunity-head">
@@ -1982,11 +2032,72 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                         <div class="trade-mini-stat"><strong>${bestTrade.balancedMatches}</strong><span>Canjes justos</span></div>
                         <div class="trade-mini-stat"><strong>${totalFairTrades}</strong><span>Total del grupo</span></div>
                     </div>
+                    <div class="trade-proposal-preview">
+                        <div>
+                            <div class="request-mini-label">Recibes</div>
+                            <div class="match-tags">${renderTradeChips(receivePreview, 'give')}</div>
+                        </div>
+                        <div>
+                            <div class="request-mini-label">Das</div>
+                            <div class="match-tags">${renderTradeChips(givePreview, 'take')}</div>
+                        </div>
+                    </div>
                     <div class="trade-action-grid">
                         <button class="btn-trade" data-action="open-home-best-trade" data-uid="${bestTrade.uid}">Ver propuesta</button>
                         <button class="btn-secondary" data-action="open-friends">Ranking amigos</button>
                         <button class="btn-nearby" data-action="open-nearby">Buscar cerca</button>
                     </div>
+                </section>
+                <section class="trade-dashboard-grid">
+                    <article class="trade-insight-card">
+                        <div class="trade-insight-head">
+                            <div><div class="hub-kicker">Ranking</div><h3>Personas clave</h3></div>
+                            <span>${topHelpers.length}</span>
+                        </div>
+                        <div class="trade-insight-list">
+                            ${renderTradeInsightRows(topHelpers, 'Aun no hay personas con laminas compatibles.', friend => `
+                                <button class="trade-person-row" data-action="open-home-best-trade" data-uid="${friend.uid}">
+                                    <span><strong>${escapeHtml(getDisplayName(friend))}</strong><small>${friend.iCanGet.length} te sirven - ${friend.iCanGive.length} puedes dar</small></span>
+                                    <em>${friend.balancedMatches}</em>
+                                </button>
+                            `)}
+                        </div>
+                    </article>
+                    <article class="trade-insight-card">
+                        <div class="trade-insight-head">
+                            <div><div class="hub-kicker">Objetivo</div><h3>Laminas buscadas</h3></div>
+                            <span>${wantedHighlights.length}</span>
+                        </div>
+                        <div class="trade-code-list">
+                            ${renderTradeInsightRows(wantedHighlights, 'Cuando tus amigos tengan repetidas que te falten, apareceran aqui.', item => `
+                                <div class="trade-code-row"><strong>${escapeHtml(item.id)}</strong><small>${item.count} amigo${item.count === 1 ? '' : 's'}</small></div>
+                            `)}
+                        </div>
+                    </article>
+                    <article class="trade-insight-card">
+                        <div class="trade-insight-head">
+                            <div><div class="hub-kicker">Tus cartas</div><h3>Repetidas utiles</h3></div>
+                            <span>${usefulDuplicates.length}</span>
+                        </div>
+                        <div class="trade-code-list">
+                            ${renderTradeInsightRows(usefulDuplicates, 'Tus repetidas apareceran aqui cuando le falten a alguien.', item => `
+                                <div class="trade-code-row"><strong>${escapeHtml(item.id)}</strong><small>${item.extras} extra - le falta a ${item.demand}</small></div>
+                            `)}
+                        </div>
+                    </article>
+                    <article class="trade-insight-card">
+                        <div class="trade-insight-head">
+                            <div><div class="hub-kicker">Estado</div><h3>Solicitudes</h3></div>
+                            <span>${activeRequests}</span>
+                        </div>
+                        <div class="trade-insight-list">
+                            ${renderTradeInsightRows(activeRequestPreview, 'No tienes solicitudes activas por ahora.', request => `
+                                <div class="trade-request-row">
+                                    <span><strong>${escapeHtml(getRequestStatusLabel(request.status))}</strong><small>${escapeHtml(getRequestSummary(request))}</small></span>
+                                </div>
+                            `)}
+                        </div>
+                    </article>
                 </section>
             `;
         } catch (e) {
