@@ -34,6 +34,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     let nearbyCandidates = [];
     let nearbyCandidatesByUid = {};
     let teamTradeCandidatesByUid = {};
+    let homeTradeCandidatesByUid = {};
     let myNearbyLocation = null;
     let suppressStickerAudio = false;
     let celebrationTimer = null;
@@ -638,6 +639,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         renderQuickStartPanel();
         renderAchievements();
         renderActivityCenter();
+        if (currentHomeTab === 'canjes') renderTradeHomePanel();
     };
 
     window.shareWsp = function() {
@@ -730,6 +732,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             button.setAttribute('aria-current', button.dataset.homeTab === tab ? 'page' : 'false');
         });
         if (tab === 'album') filterTeams();
+        if (tab === 'canjes') renderTradeHomePanel();
         window.scrollTo(0, 0);
     };
 
@@ -751,8 +754,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.23</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.23</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.24</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.24</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
@@ -1393,6 +1396,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'open-summary': window.openSummary,
                 'open-notifications': window.openNotifications,
                 'open-profile': window.openProfile,
+                'open-home-best-trade': (button) => window.openHomeBestTrade(button.dataset.uid),
                 'open-team': (button) => window.openTeam(button.dataset.teamCode, button.dataset.teamName, button.dataset.teamSpecial === 'true'),
                 'open-team-trades': window.openTeamTrades,
                 'open-trade': window.openTrade,
@@ -1817,6 +1821,149 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             };
         });
     }
+
+    async function renderTradeHomePanel() {
+        const panel = document.getElementById('trade-home-panel');
+        if (!panel || !currentUser) return;
+
+        const allStickers = window.getAllStickers();
+        const stats = getAlbumStats(window.state || {});
+        panel.innerHTML = `
+            <div class="hub-card">
+                <div>
+                    <div class="hub-kicker">Canjes</div>
+                    <h2>Buscando oportunidades</h2>
+                    <p>Revisando repetidas, amigos y solicitudes para recomendarte el mejor movimiento.</p>
+                </div>
+                <div class="trade-home-loading">Calculando...</div>
+            </div>
+        `;
+
+        try {
+            const [friendSummaries, tradeRequests] = await Promise.all([
+                getFriendSummaries(currentUser, allStickers, window.state),
+                getUserTradeRequests(currentUser)
+            ]);
+            const insights = getFriendInsights(friendSummaries, allStickers);
+            const bestTrade = insights
+                .filter(friend => friend.balancedMatches > 0 || friend.iCanGet.length > 0)
+                .sort((a, b) => b.smartScore - a.smartScore || b.balancedMatches - a.balancedMatches || b.iCanGet.length - a.iCanGet.length)[0];
+            const activeRequests = tradeRequests.filter(request => request.status !== 'rejected').length;
+            const totalCanGet = insights.reduce((total, friend) => total + friend.iCanGet.length, 0);
+            const totalFairTrades = insights.reduce((total, friend) => total + friend.balancedMatches, 0);
+            homeTradeCandidatesByUid = Object.fromEntries(insights.map(friend => [friend.uid, friend]));
+
+            if (!friendSummaries.length) {
+                panel.innerHTML = `
+                    <section class="trade-opportunity-card">
+                        <div class="trade-opportunity-head">
+                            <div>
+                                <div class="hub-kicker">Primer canje</div>
+                                <h2 class="trade-opportunity-title">Trae tu combo</h2>
+                            </div>
+                            <div class="smart-trade-badge">${stats.duplicates} repetidas</div>
+                        </div>
+                        <p class="trade-opportunity-copy">Agrega amigos para comparar álbumes y descubrir quién tiene las láminas que te faltan.</p>
+                        <div class="trade-mini-grid">
+                            <div class="trade-mini-stat"><strong>${stats.duplicates}</strong><span>Repetidas tuyas</span></div>
+                            <div class="trade-mini-stat"><strong>0</strong><span>Amigos cargados</span></div>
+                            <div class="trade-mini-stat"><strong>${activeRequests}</strong><span>Solicitudes</span></div>
+                        </div>
+                        <div class="trade-action-grid">
+                            <button class="btn-trade" data-action="open-friends">Invitar amigos</button>
+                            <button class="btn-secondary" data-action="open-trade">Canje manual</button>
+                            <button class="btn-nearby" data-action="open-nearby">Buscar cerca</button>
+                        </div>
+                    </section>
+                `;
+                return;
+            }
+
+            if (!bestTrade) {
+                panel.innerHTML = `
+                    <section class="trade-opportunity-card">
+                        <div class="trade-opportunity-head">
+                            <div>
+                                <div class="hub-kicker">Radar de canjes</div>
+                                <h2 class="trade-opportunity-title">Todavía no hay match</h2>
+                            </div>
+                            <div class="smart-trade-badge">${friendSummaries.length} amigos</div>
+                        </div>
+                        <p class="trade-opportunity-copy">Ya tienes amigos cargados. Suma más láminas o invita a más gente para que aparezcan canjes compatibles.</p>
+                        <div class="trade-mini-grid">
+                            <div class="trade-mini-stat"><strong>${stats.duplicates}</strong><span>Repetidas tuyas</span></div>
+                            <div class="trade-mini-stat"><strong>${totalCanGet}</strong><span>Te pueden dar</span></div>
+                            <div class="trade-mini-stat"><strong>${activeRequests}</strong><span>Solicitudes</span></div>
+                        </div>
+                        <div class="trade-action-grid">
+                            <button class="btn-trade" data-action="open-friends">Ver amigos</button>
+                            <button class="btn-secondary" data-action="open-trade">Canje manual</button>
+                            <button class="btn-nearby" data-action="open-nearby">Buscar cerca</button>
+                        </div>
+                    </section>
+                `;
+                return;
+            }
+
+            const recommendation = buildSmartTradeRecommendation({
+                friendUid: bestTrade.uid,
+                friendEmail: bestTrade.email,
+                friendDisplayName: bestTrade.displayName,
+                friendState: bestTrade.state || {},
+                iCanGet: bestTrade.iCanGet,
+                iCanGive: bestTrade.iCanGive
+            });
+            const title = recommendation ? 'Mejor jugada' : 'Buen candidato';
+            const reason = recommendation?.reason || `${getDisplayName(bestTrade)} puede ayudarte con ${bestTrade.iCanGet.length} láminas.`;
+
+            panel.innerHTML = `
+                <section class="trade-opportunity-card">
+                    <div class="trade-opportunity-head">
+                        <div>
+                            <div class="hub-kicker">Canje recomendado</div>
+                            <h2 class="trade-opportunity-title">${title}</h2>
+                        </div>
+                        <div class="smart-trade-badge">${escapeHtml(recommendation?.label || 'Oportunidad')}</div>
+                    </div>
+                    <p class="trade-opportunity-copy">${escapeHtml(reason)}</p>
+                    <div class="trade-mini-grid">
+                        <div class="trade-mini-stat"><strong>${escapeHtml(getDisplayName(bestTrade))}</strong><span>Persona</span></div>
+                        <div class="trade-mini-stat"><strong>${bestTrade.balancedMatches}</strong><span>Canjes justos</span></div>
+                        <div class="trade-mini-stat"><strong>${totalFairTrades}</strong><span>Total del grupo</span></div>
+                    </div>
+                    <div class="trade-action-grid">
+                        <button class="btn-trade" data-action="open-home-best-trade" data-uid="${bestTrade.uid}">Ver propuesta</button>
+                        <button class="btn-secondary" data-action="open-friends">Ranking amigos</button>
+                        <button class="btn-nearby" data-action="open-nearby">Buscar cerca</button>
+                    </div>
+                </section>
+            `;
+        } catch (e) {
+            panel.innerHTML = `
+                <section class="trade-opportunity-card">
+                    <div class="trade-opportunity-head">
+                        <div>
+                            <div class="hub-kicker">Canjes</div>
+                            <h2 class="trade-opportunity-title">Modo rápido</h2>
+                        </div>
+                        <div class="smart-trade-badge">${stats.duplicates} repetidas</div>
+                    </div>
+                    <p class="trade-opportunity-copy">No se pudieron cargar los amigos ahora mismo. Puedes seguir con canje manual o revisar cercanos.</p>
+                    <div class="trade-action-grid">
+                        <button class="btn-trade" data-action="open-trade">Intercambio rápido</button>
+                        <button class="btn-secondary" data-action="open-friends">Amigos</button>
+                        <button class="btn-nearby" data-action="open-nearby">Canjes cerca</button>
+                    </div>
+                </section>
+            `;
+        }
+    }
+
+    window.openHomeBestTrade = function(uid) {
+        const friend = homeTradeCandidatesByUid[uid];
+        if (!friend) return window.openFriends();
+        window.viewFriendTrades(friend.uid, friend.email, friend.state || {}, friend.displayName);
+    };
 
     function renderFriendGroupSummary({ activeGroupName, insights, ranking, allStickers }) {
         const summaryEl = document.getElementById('friends-group-summary');

@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="./css/styles.css?v=5.23">
+    <link rel="stylesheet" href="./css/styles.css?v=5.24">
 </head>
 <body>
 
@@ -68,7 +68,7 @@
     <div id="view-home" class="view">
         <header>
             <h1>Álbum 26</h1>
-            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.23</span></p>
+            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.24</span></p>
         </header>
 
         <div class="home-tabs">
@@ -165,16 +165,14 @@
             </section>
 
             <section class="home-tab-panel" data-home-panel="canjes">
-                <div class="hub-card">
-                    <div>
-                        <div class="hub-kicker">Canjes</div>
-                        <h2>Encuentra el mejor intercambio</h2>
-                        <p>Manual, con amigos o cerca de ti. La app prioriza propuestas que más te acercan a completar equipos.</p>
-                    </div>
-                    <div class="hub-actions">
-                        <button class="btn-trade btn-flex" data-action="open-trade">Intercambio Rápido</button>
-                        <button class="btn-secondary btn-flex" data-action="open-friends">Amigos y Canjes</button>
-                        <button class="btn-nearby btn-flex" data-action="open-nearby">Canjes Cerca</button>
+                <div id="trade-home-panel" class="trade-home-panel">
+                    <div class="hub-card">
+                        <div>
+                            <div class="hub-kicker">Canjes</div>
+                            <h2>Encuentra el mejor intercambio</h2>
+                            <p>La app revisa tus repetidas y tus amigos para sugerir la jugada con más impacto.</p>
+                        </div>
+                        <div class="trade-home-loading">Calculando oportunidades...</div>
                     </div>
                 </div>
             </section>
@@ -598,6 +596,6 @@
 </button>
 
 <!-- FIREBASE & LOGIC -->
-<script type="module" src="./js/app.js?v=5.23"></script>
+<script type="module" src="./js/app.js?v=5.24"></script>
 </body>
 </html>
