@@ -682,6 +682,10 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         renderAchievements();
         renderActivityCenter();
         renderHomeProfileCard();
+        if (currentHomeTab === 'album') {
+            renderGroupList(window.DB, window.state);
+            filterTeams();
+        }
         if (currentHomeTab === 'canjes') renderTradeHomePanel();
     };
 
@@ -774,7 +778,10 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             button.classList.toggle('active', button.dataset.homeTab === tab);
             button.setAttribute('aria-current', button.dataset.homeTab === tab ? 'page' : 'false');
         });
-        if (tab === 'album') filterTeams();
+        if (tab === 'album') {
+            renderGroupList(window.DB, window.state);
+            filterTeams();
+        }
         if (tab === 'canjes') renderTradeHomePanel();
         window.scrollTo(0, 0);
     };
@@ -797,8 +804,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.26</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.26</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.27</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.27</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
@@ -1616,7 +1623,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         // Init SW 
         if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(e=>{});
 
-        renderGroupList(window.DB);
+        renderGroupList(window.DB, window.state);
         
         // Wait for onAuthStateChanged to show a view
 
