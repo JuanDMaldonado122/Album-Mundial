@@ -31,7 +31,7 @@
             margin: 0 auto; 
             padding: calc(20px + env(safe-area-inset-top)) 20px 20px 20px;
         }
-        body.home-active .container { padding-bottom: calc(132px + env(safe-area-inset-bottom)); }
+        body.home-active .container { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
         .view { display: none; }
         .view.active { display: block; animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .home-tab-panel { display: none; }
@@ -373,12 +373,11 @@
             grid-column: span 3;
         }
         .bottom-nav {
-            position: fixed;
-            left: 50%;
-            bottom: calc(6px + env(safe-area-inset-bottom));
-            z-index: 800;
-            width: min(540px, calc(100% - 28px));
-            transform: translateX(-50%);
+            position: sticky;
+            bottom: calc(8px + env(safe-area-inset-bottom));
+            z-index: 70;
+            width: 100%;
+            margin: 26px 0 8px;
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 2px;
@@ -1925,8 +1924,5 @@
             box-shadow: 0 8px 25px rgba(204,0,0,0.5); border: none; cursor: pointer;
             z-index: 90; transition: transform 0.2s;
         }
-        body.home-active .btn-scan-float {
-            bottom: calc(86px + env(safe-area-inset-bottom));
-            right: max(18px, calc((100vw - 540px) / 2 + 18px));
-        }
+        body.home-active .btn-scan-float { display: none !important; }
         .btn-scan-float:active { transform: scale(0.9); }
