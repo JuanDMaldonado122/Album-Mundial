@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="./css/styles.css">
+    <link rel="stylesheet" href="./css/styles.css?v=5.16">
 </head>
 <body>
 
@@ -68,7 +68,7 @@
     <div id="view-home" class="view">
         <header>
             <h1>Álbum 26</h1>
-            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.15</span></p>
+            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.16</span></p>
         </header>
 
         <section class="install-card" id="install-card" hidden>
@@ -141,7 +141,7 @@
                     <div class="activity-kicker">Actividad</div>
                     <h2>Últimos movimientos</h2>
                 </div>
-                <div class="activity-count" id="activity-count">0</div>
+                <div class="activity-count" id="activity-count"><strong>0</strong><span>movs</span></div>
             </div>
             <div class="activity-feed" id="activity-feed"></div>
         </section>
@@ -552,6 +552,6 @@
 </button>
 
 <!-- FIREBASE & LOGIC -->
-<script type="module" src="./js/app.js"></script>
+<script type="module" src="./js/app.js?v=5.16"></script>
 </body>
 </html>

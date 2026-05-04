@@ -304,10 +304,20 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         if (!feed || !count || !currentUser) return;
 
         const activity = getActivity(currentUser.uid);
-        count.textContent = activity.length;
+        count.innerHTML = `<strong>${activity.length}</strong><span>movs</span>`;
 
         if (activity.length === 0) {
-            feed.innerHTML = '<div class="activity-empty">Tus movimientos importantes aparecerán aquí cuando empieces a llenar y canjear.</div>';
+            const stats = getAlbumStats(window.state || {});
+            feed.innerHTML = stats.unique > 0
+                ? `<div class="activity-card activity-card-featured">
+                    <div class="activity-icon">A</div>
+                    <div>
+                        <div class="activity-title">Álbum en marcha</div>
+                        <div class="activity-message">Ya tienes ${stats.unique} láminas únicas y ${stats.duplicates} repetidas. Tus próximos movimientos se guardarán aquí.</div>
+                    </div>
+                    <div class="activity-date">Ahora</div>
+                </div>`
+                : '<div class="activity-empty">Agrega una lámina, un sobre o una solicitud de canje y aquí aparecerá tu historia del álbum.</div>';
             return;
         }
 
@@ -610,8 +620,8 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.14</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.14</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.16</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.16</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
