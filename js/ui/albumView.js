@@ -302,13 +302,6 @@ export function renderGroupList(albumDatabase, state = {}) {
     const specialCard = document.createElement('div');
     specialCard.className = `group-card special-group team-status-${specialStatus.key}`;
     specialCard.id = 'group-especiales';
-    specialCard.innerHTML = `<div class="group-header" data-action="open-team" data-team-code="FWC" data-team-name="Sección Especial" data-team-special="true">
-        <div class="group-meta">
-            <div>Sección Especial</div>
-            <div class="group-acronyms">Lámina 00, FWC 1 - FWC 19</div>
-        </div>
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(-90deg);"><path d="M6 9l6 6 6-6"/></svg>
-    </div>`;
     specialCard.innerHTML = `<div class="group-header" data-action="open-team" data-team-code="FWC" data-team-name="Seccion Especial" data-team-special="true">
         <div class="group-meta">
             <div class="group-title-row"><span>Seccion Especial</span><span class="team-status-pill">${specialStatus.label}</span></div>
