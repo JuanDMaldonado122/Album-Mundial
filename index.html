@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="./css/styles.css?v=5.18">
+    <link rel="stylesheet" href="./css/styles.css?v=5.19">
 </head>
 <body>
 
@@ -68,153 +68,155 @@
     <div id="view-home" class="view">
         <header>
             <h1>Álbum 26</h1>
-            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.18</span></p>
+            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.19</span></p>
         </header>
 
-        <section class="install-card" id="install-card" hidden>
-            <div>
-                <div class="install-kicker">App lista</div>
-                <h2 id="install-title">Instala Álbum 26</h2>
-                <p id="install-copy">Guárdala en tu celular para abrirla como app y seguir tus canjes más rápido.</p>
-            </div>
-            <div class="install-actions">
-                <button class="btn-trade" data-action="install-app" id="install-action">Instalar app</button>
-                <button class="btn-secondary" data-action="dismiss-install">Después</button>
-            </div>
-        </section>
-
-        <div class="stats-dashboard">
-            <div class="home-toolbar">
-                <button class="profile-button" type="button" data-action="open-profile" aria-label="Editar perfil">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
-                    <span>Perfil</span>
-                </button>
-                <button class="sound-button" id="sound-toggle" type="button" data-action="toggle-audio" aria-label="Activar sonidos" aria-pressed="false">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                    <span data-audio-label>Sonido Off</span>
-                </button>
-                <button class="notification-button" type="button" data-action="open-notifications" aria-label="Ver notificaciones">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                    <span>Notificaciones</span>
-                    <span class="notification-badge" id="notification-badge" hidden>0</span>
-                </button>
-            </div>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value" id="stat-unq">0 <span class="total">/ 980</span></div>
-                    <div class="stat-label">Únicas</div>
+        <div class="home-tabs">
+            <section class="home-tab-panel active" data-home-panel="inicio">
+                <div class="stats-dashboard">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-unq">0 <span class="total">/ 980</span></div>
+                            <div class="stat-label">Únicas</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-dup" style="color:var(--fifa-red);">0</div>
+                            <div class="stat-label">Repetidas</div>
+                        </div>
+                    </div>
+                    <div class="progress-wrapper">
+                        <div class="progress-bar" id="progress-bar"></div>
+                    </div>
+                    <div class="progress-info">
+                        <span id="stat-pct">0.0% Listo</span>
+                        <span class="sync-badge">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+                            En Línea
+                        </span>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="stat-dup" style="color:var(--fifa-red);">0</div>
-                    <div class="stat-label">Repetidas</div>
+
+                <section class="quick-start-panel" id="quick-start-panel">
+                    <div class="quick-start-head">
+                        <div>
+                            <div class="quick-start-kicker">Arranque</div>
+                            <h2 id="quick-start-title">Tu álbum, listo para jugar</h2>
+                        </div>
+                        <button class="quick-start-info" type="button" data-action="show-onboarding" aria-label="Ver guía inicial">i</button>
+                    </div>
+                    <div class="quick-start-progress">
+                        <div class="quick-start-track"><span id="quick-start-bar"></span></div>
+                        <div class="quick-start-score" id="quick-start-score">0/4</div>
+                    </div>
+                    <div class="quick-start-list" id="quick-start-list"></div>
+                </section>
+            </section>
+
+            <section class="home-tab-panel" data-home-panel="album">
+                <div class="home-section-actions">
+                    <button class="btn-secondary btn-flex" data-action="open-pack">Agregar Sobre</button>
+                    <button class="btn-primary btn-flex" data-action="open-summary">Resumen Detallado</button>
+                    <button class="btn-primary btn-flex" data-action="open-share">Compartir y PDF</button>
                 </div>
-            </div>
-            <div class="progress-wrapper">
-                <div class="progress-bar" id="progress-bar"></div>
-            </div>
-            <div class="progress-info">
-                <span id="stat-pct">0.0% Completado</span>
-                <span class="sync-badge">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-                    En Línea
-                </span>
-            </div>
-            <div style="text-align: right; margin-top: 12px;">
-                <span class="user-badge" data-action="logout">Cerrar Sesión</span>
-            </div>
-        </div>
-
-        <section class="quick-start-panel" id="quick-start-panel">
-            <div class="quick-start-head">
-                <div>
-                    <div class="quick-start-kicker">Arranque</div>
-                    <h2 id="quick-start-title">Tu álbum, listo para jugar</h2>
+                <div class="inline-help tool-help" id="pro-tools-help" hidden>
+                    <div><strong>Agregar sobre</strong> registra varias láminas de una vez. Pegas códigos como <span>ARG 1</span>, <span>BRA 5</span> o <span>FWC 8</span>, y la app los suma al álbum.</div>
                 </div>
-                <button class="quick-start-info" type="button" data-action="show-onboarding" aria-label="Ver guía inicial">i</button>
-            </div>
-            <div class="quick-start-progress">
-                <div class="quick-start-track"><span id="quick-start-bar"></span></div>
-                <div class="quick-start-score" id="quick-start-score">0/4</div>
-            </div>
-            <div class="quick-start-list" id="quick-start-list"></div>
-        </section>
 
-        <section class="achievement-panel" id="achievement-panel">
-            <div class="achievement-header">
-                <div>
-                    <div class="achievement-kicker">Misiones</div>
-                    <h2>Camino al Mundial</h2>
+                <section class="achievement-panel" id="achievement-panel">
+                    <div class="achievement-header">
+                        <div>
+                            <div class="achievement-kicker">Misiones</div>
+                            <h2>Camino al Mundial</h2>
+                        </div>
+                        <div class="achievement-score" id="achievement-score">0/0</div>
+                    </div>
+                    <div class="achievement-list" id="achievement-list"></div>
+                </section>
+
+                <div class="search-wrapper teams-search-wrapper">
+                    <div class="search-header">
+                        <div class="section-label">Equipos del Álbum</div>
+                        <button class="help-dot section-help" type="button" data-action="toggle-help" data-help-target="teams-help" aria-label="Cómo agregar láminas de equipos">i</button>
+                    </div>
+                    <div class="friends-search-box" style="margin-bottom: 0;">
+                        <input type="text" id="team-search" placeholder="Buscar equipo (Ej: Colombia)..." autocomplete="off">
+                    </div>
+                    <div class="inline-help teams-help" id="teams-help" hidden>
+                        Los equipos ya vienen cargados. Para agregar láminas, abre un equipo y toca los códigos que tengas; si tocas el mismo código dos veces, queda como repetida.
+                    </div>
                 </div>
-                <div class="achievement-score" id="achievement-score">0/0</div>
-            </div>
-            <div class="achievement-list" id="achievement-list"></div>
-        </section>
 
-        <section class="activity-panel" id="activity-panel">
-            <div class="activity-header">
-                <div>
-                    <div class="activity-kicker">Actividad</div>
-                    <h2>Últimos movimientos</h2>
+                <div class="groups-container" id="group-list">
+                    <!-- Dynamically populated -->
                 </div>
-                <div class="activity-count" id="activity-count"><strong>0</strong><span>movs</span></div>
-            </div>
-            <div class="activity-feed" id="activity-feed"></div>
-        </section>
+            </section>
 
-        <button class="btn-trade btn-flex" data-action="open-trade" style="margin-top:8px;">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            Intercambio Rápido
-        </button>
+            <section class="home-tab-panel" data-home-panel="canjes">
+                <div class="hub-card">
+                    <div>
+                        <div class="hub-kicker">Canjes</div>
+                        <h2>Encuentra el mejor intercambio</h2>
+                        <p>Manual, con amigos o cerca de ti. La app prioriza propuestas que más te acercan a completar equipos.</p>
+                    </div>
+                    <div class="hub-actions">
+                        <button class="btn-trade btn-flex" data-action="open-trade">Intercambio Rápido</button>
+                        <button class="btn-secondary btn-flex" data-action="open-friends">Amigos y Canjes</button>
+                        <button class="btn-nearby btn-flex" data-action="open-nearby">Canjes Cerca</button>
+                    </div>
+                </div>
+            </section>
 
-        <button class="btn-primary btn-flex" data-action="open-summary">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-            Ver Resumen Detallado
-        </button>
+            <section class="home-tab-panel" data-home-panel="perfil">
+                <section class="install-card" id="install-card" hidden>
+                    <div>
+                        <div class="install-kicker">App lista</div>
+                        <h2 id="install-title">Instala Álbum 26</h2>
+                        <p id="install-copy">Guárdala en tu celular para abrirla como app y seguir tus canjes más rápido.</p>
+                    </div>
+                    <div class="install-actions">
+                        <button class="btn-trade" data-action="install-app" id="install-action">Instalar app</button>
+                        <button class="btn-secondary" data-action="dismiss-install">Después</button>
+                    </div>
+                </section>
 
-        <button class="btn-primary btn-flex" data-action="open-share" style="margin-top: 10px;">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-            Compartir y PDF
-        </button>
+                <div class="profile-hub">
+                    <button class="profile-button" type="button" data-action="open-profile" aria-label="Editar perfil">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span>Perfil</span>
+                    </button>
+                    <button class="sound-button" id="sound-toggle" type="button" data-action="toggle-audio" aria-label="Activar sonidos" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                        <span data-audio-label>Sonido Off</span>
+                    </button>
+                    <button class="notification-button" type="button" data-action="open-notifications" aria-label="Ver notificaciones">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        <span>Notificaciones</span>
+                        <span class="notification-badge" id="notification-badge" hidden>0</span>
+                    </button>
+                    <button class="btn-secondary" data-action="show-onboarding">Ver Guía</button>
+                    <button class="btn-secondary" data-action="logout">Cerrar Sesión</button>
+                </div>
 
-        <button class="btn-secondary btn-flex" data-action="open-friends" style="border-color: rgba(200,212,0,0.4); color: var(--fifa-lime); margin-top: 10px;">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--fifa-lime)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            Amigos y Canjes
-        </button>
-
-        <button class="btn-nearby btn-flex" data-action="open-nearby">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-            Buscar Canjes Cerca
-        </button>
-
-        <div class="solo-action-row">
-            <div class="action-with-help">
-                <button class="btn-secondary btn-flex" data-action="open-pack">
-                    Agregar Sobre
-                </button>
-                <button class="help-dot" type="button" data-action="toggle-help" data-help-target="pro-tools-help" aria-label="Qué significan estas herramientas">i</button>
-            </div>
+                <section class="activity-panel" id="activity-panel">
+                    <div class="activity-header">
+                        <div>
+                            <div class="activity-kicker">Actividad</div>
+                            <h2>Últimos movimientos</h2>
+                        </div>
+                        <div class="activity-count" id="activity-count"><strong>0</strong><span>movs</span></div>
+                    </div>
+                    <div class="activity-feed" id="activity-feed"></div>
+                </section>
+            </section>
         </div>
-        <div class="inline-help tool-help" id="pro-tools-help" hidden>
-            <div><strong>Agregar sobre</strong> registra varias láminas de una vez. Pegas códigos como <span>ARG 1</span>, <span>BRA 5</span> o <span>FWC 8</span>, y la app los suma al álbum.</div>
-        </div>
 
-        <div class="search-wrapper teams-search-wrapper" style="margin-top: 30px; margin-bottom: 20px;">
-            <div class="search-header">
-                <div class="section-label">Equipos del Álbum</div>
-                <button class="help-dot section-help" type="button" data-action="toggle-help" data-help-target="teams-help" aria-label="Cómo agregar láminas de equipos">i</button>
-            </div>
-            <div class="friends-search-box" style="margin-bottom: 0;">
-                <input type="text" id="team-search" placeholder="Buscar equipo (Ej: Colombia)..." autocomplete="off">
-            </div>
-            <div class="inline-help teams-help" id="teams-help" hidden>
-                Los equipos ya vienen cargados. Para agregar láminas, abre un equipo y toca los códigos que tengas; si tocas el mismo código dos veces, queda como repetida.
-            </div>
-        </div>
-
-        <div class="groups-container" id="group-list">
-            <!-- Dynamically populated -->
-        </div>
-        </div>
+        <nav class="bottom-nav" aria-label="Navegación principal">
+            <button class="bottom-nav-item active" type="button" data-action="switch-home-tab" data-tab="inicio">Inicio</button>
+            <button class="bottom-nav-item" type="button" data-action="switch-home-tab" data-tab="album">Álbum</button>
+            <button class="bottom-nav-item" type="button" data-action="switch-home-tab" data-tab="canjes">Canjes</button>
+            <button class="bottom-nav-item" type="button" data-action="switch-home-tab" data-tab="perfil">Perfil</button>
+        </nav>
+    </div>
 
     <!-- PROFILE VIEW -->
     <div id="view-profile" class="view">
@@ -571,6 +573,6 @@
 </button>
 
 <!-- FIREBASE & LOGIC -->
-<script type="module" src="./js/app.js?v=5.18"></script>
+<script type="module" src="./js/app.js?v=5.19"></script>
 </body>
 </html>

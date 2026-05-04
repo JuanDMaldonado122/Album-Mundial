@@ -41,6 +41,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     const INSTALL_DISMISSED_KEY = 'album26-install-dismissed';
     const ONBOARDING_SEEN_KEY = 'album26-onboarding-seen';
     const SOCIAL_STARTED_KEY = 'album26-social-started';
+    let currentHomeTab = 'inicio';
     window.smartProposalContext = null;
 
     /* === AUTHENTICATION LOGIC === */
@@ -712,10 +713,23 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     window.switchView = function(viewId, pushState = true) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.getElementById(viewId).classList.add('active');
+        document.body.classList.toggle('home-active', viewId === 'view-home');
         window.scrollTo(0,0);
         if (pushState && viewId !== 'view-auth') {
             history.pushState({ view: viewId }, '', '#' + viewId);
         }
+    };
+
+    window.switchHomeTab = function(tab = 'inicio') {
+        currentHomeTab = tab;
+        document.querySelectorAll('[data-home-panel]').forEach(panel => {
+            panel.classList.toggle('active', panel.dataset.homePanel === tab);
+        });
+        document.querySelectorAll('[data-action="switch-home-tab"]').forEach(button => {
+            button.classList.toggle('active', button.dataset.tab === tab);
+        });
+        if (tab === 'album') filterTeams();
+        window.scrollTo(0, 0);
     };
 
     // Handle iOS swipe back / browser back button
@@ -736,14 +750,15 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         const greeting = document.getElementById('home-greeting');
         if (greeting) {
             greeting.innerHTML = currentProfile.displayName
-                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.18</span>`
-                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.18</span>';
+                ? `Bienvenido, ${escapeHtml(currentProfile.displayName)} <span style="color:var(--fifa-lime); opacity:0.8;">v5.19</span>`
+                : 'Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.19</span>';
         }
         const profileButtonLabel = document.querySelector('.profile-button span');
         if (profileButtonLabel) {
             profileButtonLabel.textContent = currentProfile.displayName || 'Perfil';
         }
         window.switchView('view-home', false);
+        window.switchHomeTab(currentHomeTab);
         history.replaceState({ view: 'view-home' }, '', '#home');
         window.updateStats(); 
         updateInstallCard();
@@ -1394,6 +1409,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'share-repeated': window.shareRepeated,
                 'smart-proposal': window.sendSmartProposal,
                 'show-onboarding': () => window.showOnboarding(true),
+                'switch-home-tab': (button) => window.switchHomeTab(button.dataset.tab),
                 'team-trade-whatsapp': (button) => window.sendTeamTradeWhatsapp(button.dataset.uid),
                 'switch-friend-group': (button) => {
                     activeFriendGroupId = button.dataset.groupId || 'all';

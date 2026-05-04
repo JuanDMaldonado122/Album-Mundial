@@ -29,10 +29,13 @@
         .container { 
             max-width: 600px; 
             margin: 0 auto; 
-            padding: calc(20px + env(safe-area-inset-top)) 20px 20px 20px; 
+            padding: calc(20px + env(safe-area-inset-top)) 20px 20px 20px;
         }
+        body.home-active .container { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
         .view { display: none; }
         .view.active { display: block; animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .home-tab-panel { display: none; }
+        .home-tab-panel.active { display: block; animation: fadeUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Typography & Headers */
@@ -302,6 +305,104 @@
             box-shadow: 0 8px 26px rgba(200,212,0,0.24);
         }
         .btn-nearby:active { transform: scale(0.98); box-shadow: 0 4px 14px rgba(200,212,0,0.2); }
+
+        .home-tabs { min-height: 54vh; }
+        .home-section-actions {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .home-section-actions .btn-primary,
+        .home-section-actions .btn-secondary {
+            margin: 0;
+        }
+        .hub-card,
+        .profile-hub {
+            border: 1px solid rgba(255,255,255,0.14);
+            background:
+                linear-gradient(135deg, rgba(91,31,130,0.18), rgba(204,0,0,0.1)),
+                rgba(255,255,255,0.045);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 18px;
+            box-shadow: 0 14px 34px rgba(0,0,0,0.24);
+        }
+        .hub-kicker {
+            color: var(--fifa-lime);
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .hub-card h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 34px;
+            font-weight: 400;
+            letter-spacing: 2px;
+            line-height: 1;
+            text-transform: uppercase;
+            margin: 0 0 8px;
+        }
+        .hub-card p {
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.5;
+            margin: 0 0 16px;
+        }
+        .hub-actions,
+        .profile-hub {
+            display: grid;
+            gap: 10px;
+        }
+        .hub-actions .btn-trade,
+        .hub-actions .btn-secondary,
+        .hub-actions .btn-nearby,
+        .profile-hub .btn-secondary,
+        .profile-hub .profile-button {
+            margin: 0;
+        }
+        .profile-hub {
+            grid-template-columns: 1fr auto auto;
+            align-items: center;
+        }
+        .profile-hub .btn-secondary {
+            grid-column: span 3;
+        }
+        .bottom-nav {
+            position: fixed;
+            left: 50%;
+            bottom: 0;
+            z-index: 800;
+            width: min(600px, 100%);
+            transform: translateX(-50%);
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+            border-top: 1px solid rgba(255,255,255,0.12);
+            background: rgba(10,10,10,0.94);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 -18px 46px rgba(0,0,0,0.42);
+        }
+        .bottom-nav-item {
+            min-height: 48px;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.04);
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+        .bottom-nav-item.active {
+            border-color: rgba(200,212,0,0.42);
+            background: rgba(200,212,0,0.12);
+            color: var(--fifa-lime);
+        }
 
         .quick-start-panel {
             position: relative;
@@ -1787,4 +1888,5 @@
             box-shadow: 0 8px 25px rgba(204,0,0,0.5); border: none; cursor: pointer;
             z-index: 90; transition: transform 0.2s;
         }
+        body.home-active .btn-scan-float { bottom: calc(92px + env(safe-area-inset-bottom)); }
         .btn-scan-float:active { transform: scale(0.9); }
