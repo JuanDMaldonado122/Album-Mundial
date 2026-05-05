@@ -39,7 +39,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
     let suppressStickerAudio = false;
     let celebrationTimer = null;
     let deferredInstallPrompt = null;
-    const APP_VERSION = 'v5.31';
+    const APP_VERSION = 'v5.32';
     const INSTALL_DISMISSED_KEY = 'album26-install-dismissed';
     const ONBOARDING_SEEN_KEY = 'album26-onboarding-seen';
     const SOCIAL_STARTED_KEY = 'album26-social-started';
@@ -450,6 +450,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         if (!isMatchAudioEnabled()) toggleMatchAudio();
         playUiSound('packGoal');
         window.renderSettingsView();
+        renderMissionSurfaces();
     };
 
     window.resetOnboardingGuide = function() {
@@ -580,6 +581,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         if (!currentUser) return;
         localStorage.setItem(getSocialStartedKey(), 'true');
         renderQuickStartPanel();
+        renderMissionSurfaces();
     }
 
     function getQuickStartSteps() {
@@ -729,26 +731,243 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         return false;
     }
 
+    function getSocialMissionProgress() {
+        const groupsWithMembers = friendGroups.filter(group => Object.keys(group.members || {}).length > 0).length;
+        const socialStarted = localStorage.getItem(getSocialStartedKey()) === 'true' || groupsWithMembers > 0;
+        return { groupsWithMembers, socialStarted };
+    }
+
+    function createMissionItem(item) {
+        const progress = Math.min(item.progress || 0, item.target || 1);
+        const target = item.target || 1;
+        return {
+            action: 'open-summary',
+            actionLabel: 'Avanzar',
+            icon: 'M',
+            ...item,
+            progress,
+            target,
+            completed: progress >= target,
+            percentage: Math.round((progress / target) * 100)
+        };
+    }
+
+    function getMissionDashboard() {
+        const stats = getAlbumStats(window.state || {});
+        const albumDashboard = getAchievementDashboard(window.DB, window.state || {});
+        const readiness = getProfileReadiness(currentProfile || {});
+        const { groupsWithMembers, socialStarted } = getSocialMissionProgress();
+        const activeRequests = Object.values(tradeRequestsById || {}).filter(request => request.status !== 'rejected').length;
+        const level = getCollectorLevel(stats.unique);
+
+        const albumMissions = albumDashboard.achievements.map(item => createMissionItem({
+            ...item,
+            icon: item.completed ? 'C' : 'L',
+            action: item.id.includes('duplicate') ? 'open-friends' : 'open-summary',
+            actionLabel: item.completed ? 'Ver' : 'Sumar'
+        }));
+
+        const socialMissions = [
+            createMissionItem({
+                id: 'profile-ready',
+                title: 'Ficha de coleccionista',
+                detail: 'Completa tu apodo, zona, equipo favorito, estilo y frase.',
+                progress: readiness.done,
+                target: readiness.steps.length,
+                icon: 'P',
+                action: 'open-profile',
+                actionLabel: readiness.done >= readiness.steps.length ? 'Editar' : 'Completar'
+            }),
+            createMissionItem({
+                id: 'social-squad',
+                title: 'Arma tu barra',
+                detail: 'Crea un grupo o invita al menos un amigo para comparar progreso.',
+                progress: socialStarted ? 1 : 0,
+                target: 1,
+                icon: 'A',
+                action: 'open-friends',
+                actionLabel: socialStarted ? 'Ver grupo' : 'Invitar'
+            }),
+            createMissionItem({
+                id: 'nearby-hunter',
+                title: 'Canje de barrio',
+                detail: 'Activa canjes cerca para aparecer en el ranking de coleccionistas cercanos.',
+                progress: myNearbyLocation ? 1 : 0,
+                target: 1,
+                icon: 'U',
+                action: 'open-nearby',
+                actionLabel: myNearbyLocation ? 'Ver mapa' : 'Activar'
+            }),
+            createMissionItem({
+                id: 'first-request',
+                title: 'Primera propuesta',
+                detail: 'Envia o recibe una solicitud de canje para abrir el camino al chat.',
+                progress: Math.min(activeRequests, 1),
+                target: 1,
+                icon: 'C',
+                action: 'open-friends',
+                actionLabel: activeRequests ? 'Revisar' : 'Buscar'
+            }),
+            createMissionItem({
+                id: 'mode-goal',
+                title: 'Ambiente de estadio',
+                detail: 'Activa el modo gol para que cada avance se sienta con celebracion.',
+                progress: isMatchAudioEnabled() ? 1 : 0,
+                target: 1,
+                icon: 'G',
+                action: 'open-settings',
+                actionLabel: isMatchAudioEnabled() ? 'Ajustar' : 'Activar'
+            }),
+            createMissionItem({
+                id: 'install-app',
+                title: 'Album en el bolsillo',
+                detail: 'Instala la app en el inicio del celular para entrar como aplicacion.',
+                progress: isStandaloneApp() ? 1 : 0,
+                target: 1,
+                icon: 'I',
+                action: 'install-app',
+                actionLabel: isStandaloneApp() ? 'Lista' : 'Instalar'
+            })
+        ];
+
+        const missions = [...albumMissions, ...socialMissions];
+        const completed = missions.filter(item => item.completed);
+        const active = missions
+            .filter(item => !item.completed)
+            .sort((a, b) => b.percentage - a.percentage || a.target - b.target);
+        const nextTeams = albumDashboard.nextTeams;
+
+        return {
+            stats,
+            level,
+            missions,
+            active,
+            completed,
+            nextTeams,
+            completedTeams: albumDashboard.completedTeams,
+            completedCount: completed.length,
+            totalCount: missions.length,
+            seasonPercentage: missions.length ? Math.round((completed.length / missions.length) * 100) : 0
+        };
+    }
+
+    function renderMissionCard(item, options = {}) {
+        const compact = options.compact ? ' compact' : '';
+        const complete = item.completed ? ' complete' : '';
+        const actionData = item.action === 'open-team'
+            ? ` data-team-code="${escapeHtml(item.teamCode || '')}" data-team-name="${escapeHtml(item.teamName || item.title)}" data-team-special="${item.isSpecial ? 'true' : 'false'}"`
+            : '';
+        return `
+            <div class="mission-card${compact}${complete}">
+                <div class="mission-icon">${escapeHtml(item.icon || 'M')}</div>
+                <div class="mission-main">
+                    <div class="mission-title-row">
+                        <strong>${escapeHtml(item.title)}</strong>
+                        <span>${item.progress}/${item.target}</span>
+                    </div>
+                    <p>${escapeHtml(item.detail)}</p>
+                    <div class="mission-progress"><span style="width:${Math.min(item.percentage, 100)}%"></span></div>
+                </div>
+                <button class="mission-action" data-action="${escapeHtml(item.action)}"${actionData}>${escapeHtml(item.completed ? 'Ver' : item.actionLabel)}</button>
+            </div>
+        `;
+    }
+
+    function renderMissionTeaser() {
+        const teaser = document.getElementById('mission-teaser');
+        if (!teaser || !currentUser) return;
+
+        const dashboard = getMissionDashboard();
+        const nextMission = dashboard.active[0] || dashboard.completed[dashboard.completed.length - 1];
+        const title = document.getElementById('mission-teaser-title');
+        const copy = document.getElementById('mission-teaser-copy');
+
+        if (title) title.textContent = nextMission ? nextMission.title : 'Temporada completada';
+        if (copy) {
+            copy.textContent = nextMission && !nextMission.completed
+                ? `${nextMission.progress}/${nextMission.target} listo - ${nextMission.detail}`
+                : `Tienes ${dashboard.completedCount} logros desbloqueados.`;
+        }
+    }
+
+    function renderMissionsView() {
+        const activeList = document.getElementById('missions-active-list');
+        const badgeGrid = document.getElementById('missions-badge-grid');
+        if (!activeList || !badgeGrid) return;
+
+        const dashboard = getMissionDashboard();
+        const setText = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        };
+        const setWidth = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.style.width = `${value}%`;
+        };
+
+        setText('missions-level-title', dashboard.level.label);
+        setText('missions-level-copy', dashboard.active[0]
+            ? `Siguiente reto: ${dashboard.active[0].title}.`
+            : 'Temporada perfecta. Sigue sumando laminas y canjes.');
+        setText('missions-score', `${dashboard.completedCount}/${dashboard.totalCount}`);
+        setText('missions-progress-label', `${dashboard.seasonPercentage}%`);
+        setWidth('missions-progress-bar', dashboard.seasonPercentage);
+        setText('missions-unique-count', dashboard.stats.unique);
+        setText('missions-duplicate-count', dashboard.stats.duplicates);
+        setText('missions-team-count', dashboard.completedTeams.length);
+
+        const activeCards = [
+            ...dashboard.active.slice(0, 8),
+            ...dashboard.nextTeams.map(team => createMissionItem({
+                id: `team-${team.code}`,
+                title: `Cierra ${team.name}`,
+                detail: `${team.owned} de ${team.total} laminas listas. Estas cerca.`,
+                progress: team.owned,
+                target: team.total,
+                icon: 'E',
+                action: 'open-team',
+                actionLabel: 'Abrir',
+                teamCode: team.code,
+                teamName: team.name,
+                isSpecial: team.isSpecial
+            }))
+        ].slice(0, 8);
+
+        activeList.innerHTML = activeCards.length
+            ? activeCards.map(item => renderMissionCard(item)).join('')
+            : '<div class="achievement-empty">No hay misiones pendientes. Tu album esta en modo leyenda.</div>';
+
+        badgeGrid.innerHTML = dashboard.completed.length
+            ? dashboard.completed.slice(0, 12).map(item => `
+                <div class="mission-badge">
+                    <div>${escapeHtml(item.icon || 'M')}</div>
+                    <strong>${escapeHtml(item.title)}</strong>
+                    <span>Desbloqueado</span>
+                </div>
+            `).join('')
+            : '<div class="achievement-empty">Aun no hay logros desbloqueados. La primera lamina abre la vitrina.</div>';
+    }
+
+    window.openMissions = function() {
+        renderMissionsView();
+        window.switchView('view-missions');
+    };
+
     function renderAchievements() {
         const list = document.getElementById('achievement-list');
         const score = document.getElementById('achievement-score');
         if (!list || !score) return;
 
-        const dashboard = getAchievementDashboard(window.DB, window.state);
+        const dashboard = getMissionDashboard();
         score.textContent = `${dashboard.completedCount}/${dashboard.totalCount}`;
 
         const cards = [
-            ...dashboard.activeMissions.map(item => ({
-                title: item.title,
-                detail: item.detail,
-                meta: `${item.progress}/${item.target}`,
-                percentage: item.percentage,
-                completed: false
-            })),
+            ...dashboard.active.slice(0, 3),
             ...dashboard.nextTeams.map(team => ({
                 title: `Casi completas ${team.name}`,
                 detail: `${team.owned} de ${team.total} laminas listas.`,
-                meta: `${team.percentage}%`,
+                progress: team.owned,
+                target: team.total,
                 percentage: team.percentage,
                 completed: false
             }))
@@ -766,11 +985,19 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                         <div class="achievement-title">${escapeHtml(card.title)}</div>
                         <div class="achievement-detail">${escapeHtml(card.detail)}</div>
                     </div>
-                    <div class="achievement-meta">${escapeHtml(card.meta)}</div>
+                    <div class="achievement-meta">${escapeHtml(`${card.progress}/${card.target}`)}</div>
                 </div>
                 <div class="achievement-progress"><span style="width:${Math.min(card.percentage, 100)}%"></span></div>
             </div>
         `).join('');
+    }
+
+    function renderMissionSurfaces() {
+        renderAchievements();
+        renderMissionTeaser();
+        if (document.getElementById('view-missions')?.classList.contains('active')) {
+            renderMissionsView();
+        }
     }
 
     window.updateSticker = function(id, delta) {
@@ -830,7 +1057,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         document.getElementById('progress-bar').style.width = `${stats.percentage}%`;
         window.renderNotificationBadge();
         renderQuickStartPanel();
-        renderAchievements();
+        renderMissionSurfaces();
         renderActivityCenter();
         renderHomeProfileCard();
         if (currentHomeTab === 'album') {
@@ -1458,6 +1685,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             });
             trackActivity('nearby', 'Canjes cerca activado', 'Activaste tu zona aproximada para encontrar coleccionistas.');
             await refreshNearbyCandidates();
+            renderMissionSurfaces();
         } catch (e) {
             status.textContent = getLocationErrorMessage(e);
             renderNearbyMap();
@@ -1476,6 +1704,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 longitude: -74.07
             }, currentProfile);
             await refreshNearbyCandidates();
+            renderMissionSurfaces();
             status.textContent = 'Mapa en modo prueba. Para canjes reales, activa la ubicación del navegador.';
         } catch (e) {
             status.textContent = 'No se pudo activar el modo prueba. Revisa Firebase.';
@@ -1491,6 +1720,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
         document.getElementById('nearby-status').textContent = 'Tu ubicación para canjes cercanos quedó pausada.';
         renderNearbyMap();
         renderNearbyList();
+        renderMissionSurfaces();
     };
 
     function bindStaticEvents() {
@@ -1559,6 +1789,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'open-nearby': 'nav',
                 'open-notifications': 'nav',
                 'open-pack': 'nav',
+                'open-missions': 'nav',
                 'open-profile': 'nav',
                 'open-settings': 'nav',
                 'open-scanner': 'nav',
@@ -1593,6 +1824,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
                 'open-chat': (button) => window.openTradeChat(button.dataset.requestId),
                 'open-nearby': window.openNearby,
                 'open-pack': window.openPackMode,
+                'open-missions': window.openMissions,
                 'onboarding-primary': window.onboardingPrimary,
                 'open-scanner': window.openScanner,
                 'open-share': () => window.switchView('view-share'),
@@ -1653,6 +1885,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             actions[actionButton.dataset.action]?.(actionButton);
             if (actionButton.dataset.action === 'toggle-audio') {
                 window.renderSettingsView?.();
+                renderMissionSurfaces();
             }
             if (actionButton.dataset.action === 'open-profile') {
                 window.finishOnboarding?.();
@@ -2553,6 +2786,7 @@ import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/
             const tradeRequests = await getUserTradeRequests(currentUser);
             tradeRequestsById = Object.fromEntries(tradeRequests.map(request => [request.id, request]));
             renderTradeRequests(tradeRequests);
+            renderMissionSurfaces();
 
             const friendSummaries = await getFriendSummaries(currentUser, allStickers, window.state);
             const visibleFriendSummaries = getActiveFriendSummaries(friendSummaries);

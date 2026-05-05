@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="./css/styles.css?v=5.31">
+    <link rel="stylesheet" href="./css/styles.css?v=5.32">
 </head>
 <body>
 
@@ -68,7 +68,7 @@
     <div id="view-home" class="view">
         <header>
             <h1>Álbum 26</h1>
-            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.31</span></p>
+            <p class="subtitle" id="home-greeting">Álbum Sincronizado <span style="color:var(--fifa-lime); opacity:0.8;">v5.32</span></p>
         </header>
 
         <div class="home-tabs">
@@ -109,6 +109,14 @@
                         <div class="quick-start-score" id="quick-start-score">0/4</div>
                     </div>
                     <div class="quick-start-list" id="quick-start-list"></div>
+                    <div class="mission-teaser" id="mission-teaser">
+                        <div>
+                            <div class="quick-start-kicker">Misiones</div>
+                            <strong id="mission-teaser-title">Siguiente reto</strong>
+                            <small id="mission-teaser-copy">Completa tareas para subir tu nivel de coleccionista.</small>
+                        </div>
+                        <button class="quick-start-action" data-action="open-missions">Ver misiones</button>
+                    </div>
                 </section>
             </section>
 
@@ -141,7 +149,10 @@
                             <div class="achievement-kicker">Misiones</div>
                             <h2>Camino al Mundial</h2>
                         </div>
-                        <div class="achievement-score" id="achievement-score">0/0</div>
+                        <div class="achievement-header-actions">
+                            <div class="achievement-score" id="achievement-score">0/0</div>
+                            <button class="achievement-open" type="button" data-action="open-missions">Ver todo</button>
+                        </div>
                     </div>
                     <div class="achievement-list" id="achievement-list"></div>
                 </section>
@@ -338,7 +349,7 @@
             </div>
             <div class="settings-version">
                 <span>Version</span>
-                <strong id="settings-version">v5.31</strong>
+                <strong id="settings-version">v5.32</strong>
             </div>
         </section>
         <section class="settings-panel">
@@ -382,6 +393,55 @@
                 <button class="btn-secondary" data-action="install-app">Instalar app</button>
             </div>
             <div id="settings-action-status" class="mini-feedback"></div>
+        </section>
+    </div>
+
+    <!-- MISSIONS VIEW -->
+    <div id="view-missions" class="view">
+        <div class="nav-bar">
+            <button class="btn-back" data-action="go-home"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <h2 class="nav-title">Misiones</h2>
+        </div>
+        <section class="missions-hero">
+            <div>
+                <div class="missions-kicker">Temporada Mundial</div>
+                <h2 id="missions-level-title">Debut mundialista</h2>
+                <p id="missions-level-copy">Cada lamina, canje y grupo suma a tu camino.</p>
+            </div>
+            <div class="missions-score">
+                <strong id="missions-score">0/0</strong>
+                <span>logros</span>
+            </div>
+        </section>
+        <section class="missions-progress-card">
+            <div class="missions-progress-head">
+                <span>Progreso de temporada</span>
+                <strong id="missions-progress-label">0%</strong>
+            </div>
+            <div class="missions-progress-track"><span id="missions-progress-bar"></span></div>
+            <div class="missions-stats-grid">
+                <div><strong id="missions-unique-count">0</strong><span>unicas</span></div>
+                <div><strong id="missions-duplicate-count">0</strong><span>canjes</span></div>
+                <div><strong id="missions-team-count">0</strong><span>equipos</span></div>
+            </div>
+        </section>
+        <section class="missions-section">
+            <div class="missions-section-head">
+                <div>
+                    <div class="missions-kicker">Ahora mismo</div>
+                    <h3>Misiones activas</h3>
+                </div>
+            </div>
+            <div class="missions-list" id="missions-active-list"></div>
+        </section>
+        <section class="missions-section">
+            <div class="missions-section-head">
+                <div>
+                    <div class="missions-kicker">Vitrina</div>
+                    <h3>Logros desbloqueados</h3>
+                </div>
+            </div>
+            <div class="missions-badge-grid" id="missions-badge-grid"></div>
         </section>
     </div>
 
@@ -703,6 +763,6 @@
 </button>
 
 <!-- FIREBASE & LOGIC -->
-    <script type="module" src="./js/app.js?v=5.31"></script>
+    <script type="module" src="./js/app.js?v=5.32"></script>
 </body>
 </html>
